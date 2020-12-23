@@ -6,7 +6,6 @@ Connects two nodes at a specific distance
 # pylint: disable=E0402
 # type: ignore
 import random
-from .node_object import Node
 import numpy as np
 import math
 
@@ -34,7 +33,7 @@ def norm_cdf(x, mu, sigma):
 
 
 # pylint: disable=R0902
-class ConnectorObject(Node):
+class ConnectorObject():
     """Connector Object is a node that connects two nodes
     """
 
@@ -124,7 +123,7 @@ class ConnectorObject(Node):
         """It prints the connector mu, sigma values and its children values in
            tree structure
         """
-        print(" m: {} s: {}".format(self.mu, self.sigma))
+        print(" m: {} s: {}".format(self._mu, self._sigma))
 
     def export(self, export_file) -> None:
         """Exports Connector data to the given file
@@ -133,7 +132,7 @@ class ConnectorObject(Node):
             export_file (file): File to export the conector
 
         """
-        export_file.write("\nm: {} s: {}".format(self._mu, self._sigma))
+        export_file.write("\n m: {} s: {}".format(self._mu, self._sigma))
 
     # pylint: disable=R0201
     def is_connector(self) -> bool:

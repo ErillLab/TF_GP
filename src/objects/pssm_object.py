@@ -2,11 +2,10 @@
 Saves al specific PSSM data structure
 """
 import random
-from objects.node_object import Node
 import numpy as np
 
 
-class PssmObject(Node):
+class PssmObject():
     """PSSM object
     """
 
@@ -71,7 +70,7 @@ class PssmObject(Node):
         """Mutation operators associated to the PSSM recognizer
 
         Args:
-            org_factory (OrganismFactory): Cretes organisms and Node components
+            org_factory (OrganismFactory): Cretes organisms
         """
 
         if random.random() < self.mutate_probability_random_col:
@@ -267,8 +266,8 @@ class PssmObject(Node):
             if position[base] >= self.upper_print_probability:
                 base = base.upper()
             recognized += base
-
-        export_file.write(recognized)
+        
+        export_file.write("\n" + recognized)
 
     def is_connector(self) -> bool:
         """node is not a connector
