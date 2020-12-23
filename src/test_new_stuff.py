@@ -78,18 +78,17 @@ child_2.print()  # Print child_2
 
 
 
-
-
 # Test 'export' method
 parent_1.export("test_export_org.txt")
 child_1.export("test_export_org.txt")
 
 
-
-
-
-
-
+# Test json import/export
+# Export organisms
+organism_factory.export_organisms([parent_1], "parent1_json_test.json")
+# Import organisms
+org_list = organism_factory.import_organisms("parent1_json_test.json")
+org_list[0].print()
 
 
 

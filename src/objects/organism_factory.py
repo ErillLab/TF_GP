@@ -312,25 +312,31 @@ class OrganismFactory:
             a list of organisms objects read from the file
         """
         organism_list = []
-        organism_json = {}
+
         with open(file_name) as json_file:
             organism_json = json.load(json_file)
 
         for organism in organism_json:
 
-            new_organism = OrganismObject(self.get_id(), self.conf_org, self.conf_pssm["MAX_COLUMNS"])
-            root_node = None
+            new_organism = OrganismObject(
+                self.get_id(), self.conf_org, self.conf_pssm["MAX_COLUMNS"]
+            )
+            
+            new_org_recognizers = []  # The recognizers are collected here
+            new_org_connectors = []  # The connectors are collected here
+            
+            for element in organism:
+                if element["objectType"] == "pssm":
+                    new_org_recognizers.append(self.import_pssm(element))
+                elif element["objectType"] == "connector":
+                    new_org_connectors.append(self.import_connector(element))
+            
+            # Set recognizers and connectors of the organism
+            new_organism.set_recognizers(new_org_recognizers)
+            new_organism.set_connectors(new_org_connectors)
 
-            if organism["rootNode"]["objectType"] == "pssm":
-                root_node = self.import_pssm(organism["rootNode"])
-            else:
-                root_node = self.import_connector(organism["rootNode"])
-
-            new_organism.set_root_node(root_node)
-            new_organism.reset_ids()
-
-            if "isTracked" in organism.keys():
-                new_organism.set_is_tracked(organism["isTracked"])
+            #if "isTracked" in organism.keys():  # !!!
+            #    new_organism.set_is_tracked(organism["isTracked"])
 
             organism_list.append(new_organism)
 
@@ -348,22 +354,6 @@ class OrganismFactory:
         new_connector = ConnectorObject(
             connector["mu"], connector["sigma"], self.conf_con
         )
-
-        node1 = None
-        if connector["node1"]["objectType"] == "pssm":
-            node1 = self.import_pssm(connector["node1"])
-        else:
-            node1 = self.import_connector(connector["node1"])
-
-        new_connector.set_node1(node1)
-
-        node2 = None
-        if connector["node2"]["objectType"] == "pssm":
-            node2 = self.import_pssm(connector["node2"])
-        else:
-            node2 = self.import_connector(connector["node2"])
-
-        new_connector.set_node2(node2)
 
         return new_connector
 
@@ -386,17 +376,16 @@ class OrganismFactory:
             a_organisms: list of organisms to export
             filename: name of the file to export all the organisms
         """
+        
         list_json_organisms = []
         for o_organism in a_organisms:
-            organism = {}
-            if o_organism.root_node.is_connector():
-                organism["rootNode"] = self.export_connector(
-                    o_organism.root_node
-                )
-            else:
-                organism["rootNode"] = self.export_pssm(o_organism.root_node)
+            organism = []
+            for i in range(o_organism.count_recognizers() - 1):
+                organism.append(self.export_pssm(o_organism.recognizers[i]))
+                organism.append(self.export_connector(o_organism.connectors[i]))
+            organism.append(self.export_pssm(o_organism.recognizers[-1]))
             list_json_organisms.append(organism)
-
+        
         with open(filename, "w+") as json_file:
             json.dump(list_json_organisms, json_file, indent=2)
 
@@ -413,17 +402,6 @@ class OrganismFactory:
         connector["objectType"] = "connector"
         connector["mu"] = o_connector._mu
         connector["sigma"] = o_connector._sigma
-
-        # Check if its pssm
-        if o_connector.node1.is_connector():
-            connector["node1"] = self.export_connector(o_connector.node1)
-        else:
-            connector["node1"] = self.export_pssm(o_connector.node1)
-
-        if o_connector.node2.is_connector():
-            connector["node2"] = self.export_connector(o_connector.node2)
-        else:
-            connector["node2"] = self.export_pssm(o_connector.node2)
 
         return connector
 
