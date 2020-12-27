@@ -1,6 +1,10 @@
 """C object
-Connects two nodes at a specific distance
-
+   Connector objects connect recognizer objects using two parameters:
+   - mu: determines the ideal distance between the two recognizer objects
+   - sigma: determines the variance that is allowed to that distance
+   The "energy" contributed by a connector object depends on the
+   relative distances of the two recognizer nodes that it connects when
+   placed on the sequence.
 """
 
 # pylint: disable=E0402
@@ -11,6 +15,14 @@ import math
 
 
 def norm_pdf(x, mu, sigma):
+"""Normal probablity densitity function
+   computes the normal probability density function
+   used to compute the energy provided by the connector
+   the distance at which connecting nodes are placed
+   is the 'x' for the function, which will return the
+   probability of observing said distance under the 
+   connector model
+"""
     if sigma != 0:
         var = float(sigma)**2
         denom = (2*math.pi*var)**.5
@@ -24,7 +36,6 @@ def norm_pdf(x, mu, sigma):
             p = 0
     return p
 
-
 def norm_cdf(x, mu, sigma):
     # Cumulative distribution function for the normal distribution
     z = (x-mu)/abs(sigma)
@@ -34,7 +45,7 @@ def norm_cdf(x, mu, sigma):
 
 # pylint: disable=R0902
 class ConnectorObject():
-    """Connector Object is a node that connects two nodes
+    """Connector Object is a node that connects two recognizer objects
     """
 
     # pylint: disable=R0913
@@ -44,17 +55,20 @@ class ConnectorObject():
             _sigma: int,
             config: dict,
     ):
-        """Connector constructor gets mu, sigma and can get the two initial nodes.
+        """Connector constructor: 
+            - gets/sets mu and sigma
+            - sets all connector-specific configuration items
 
         Args:
             _mu: Mean distance between node1 and node2
-            _sigma: Variance between node 1 and node2
-            config: Configurations loadad from config.json
+            _sigma: Variance of distance between node 1 and node2
+            config: Node-level configuration specs as loaded from config.json
 
         """
-        super().__init__()
+        # set mu and sigma
         self._mu = _mu  # Mean discance
         self._sigma = _sigma  # Variance between elements
+        # set connector-specific configuration parameters
         self.mutate_probability_sigma = config["MUTATE_PROBABILITY_SIGMA"]
         self.mutate_probability_mu = config["MUTATE_PROBABILITY_MU"]
         self.mutate_variance_sigma = config["MUTATE_VARIANCE_SIGMA"]
@@ -69,7 +83,7 @@ class ConnectorObject():
         """Set mu variable
 
         Args:
-            _mu: Mean distance between node1 and node2
+            _mu: Mean distance between nodes connected by connector
         """
         self._mu = _mu
 
@@ -77,7 +91,7 @@ class ConnectorObject():
         """Set sigma variable
 
         Args:
-            sigma: Variance between node 1 and node2
+            sigma: Variance in distance between nodes connected by connector
         """
         self._sigma = sigma
 
@@ -93,12 +107,19 @@ class ConnectorObject():
         
         # LINEAR SIGMA MUTATION
         if random.random() < self.mutate_probability_sigma:
-            # Alter sigma
+            # Update sigma with a random permutation within allowed interval
             self._sigma += random.uniform(
                 -self.mutate_variance_sigma, self.mutate_variance_sigma
             )
-        
-        
+
+        '''
+        # FAST LOG SIGMA MUTATION
+        if random.random() < self.mutate_probability_sigma:
+            # Update sigma with random multiplicative change from allowed interval
+            self._sigma *= random.uniform(1/self.mutate_variance_sigma,
+                                          self.mutate_variance_sigma)
+        '''
+
         '''
         # LOGARITHMIC SIGMA MUTATION
         if random.random() < self.mutate_probability_sigma:
@@ -110,9 +131,10 @@ class ConnectorObject():
             new_sigma = base**logb_sigma
             self._sigma = new_sigma
         '''
-
+        
+        # LINEAR MU MUTATION
         if random.random() < self.mutate_probability_mu:
-            # Alter mu
+            # Update mu with a random permutation within allowed interval
             self._mu += random.uniform(
                 -self.mutate_variance_mu, self.mutate_variance_mu
             )
@@ -120,8 +142,7 @@ class ConnectorObject():
     # pylint: enable=W0613
 
     def print(self) -> None:
-        """It prints the connector mu, sigma values and its children values in
-           tree structure
+        """Prints the connector mu and sigma values
         """
         print(" m: {} s: {}".format(self._mu, self._sigma))
 
