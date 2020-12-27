@@ -35,7 +35,6 @@ class PssmObject():
         self.length = len(pwm)  # length of the numpy array
         self.pwm = pwm  # numpy array of dictionaries
         self.pssm = None #scoring matrix
-        self.optimal_combination: list = [] #consensus
         
         # assign PSSM-specific configuration elements
         self.mutate_probability_random_col = config[
@@ -202,26 +201,8 @@ class PssmObject():
                     "a": round(tmp_bases[3], decimals),
                 }
             )
+        #assign re-computed PSSM
         self.pssm = np.array(tmp_pssm)
-        # Also calculate the optimal pssm combinations
-        self.optimal_combination = [""]
-        for position in tmp_pssm:
-            max_bases = []
-            max_base_score = float("-inf")
-            for base in position:
-                if position[base] > max_base_score:
-                    max_bases = [base]
-                    max_base_score = position[base]
-                elif position[base] == max_base_score:
-                    max_bases.append(base)
-
-            tmp_optimal = []
-            for base in max_bases:
-                for comb in self.optimal_combination:
-                    tmp_optimal.append(comb + base)
-
-            self.optimal_combination = tmp_optimal
-        # print(self.optimal_combination)
 
 
     def get_score(self, s_dna: str) -> float:
@@ -239,24 +220,33 @@ class PssmObject():
         complement = {"a": "t", "t": "a", "g": "c", "c": "g"}
         # gets a score from pssm
         score = 0
-        score_reverse = 0
+        score_reverse = float("-inf")
         str_length = len(s_dna)
+      
+        # score given strand
         for i in range(str_length):
-
             score += self.pssm[i][s_dna[i]]
-            score_reverse += self.pssm[str_length - i - 1][
-                complement[s_dna[str_length - i - 1]]
-            ]
-        # Returns the max binding score
-        return (
-            score
-            if score > score_reverse or not self.scan_reverse_complement
-            else score_reverse
+
+        # if reverse sequence scoring is activated, score reverse
+        if self.scan_reverse_complement:
+            score_reverse = 0
+            for i in range(str_length):
+                score_reverse += self.pssm[str_length - i - 1][
+                                 complement[s_dna[str_length - i - 1]]]
+               
+        # Return the max binding score
+        # (only truly applies if scan_reverse_complement is activated)
+        if score_reverse > score:
+            return(score_reverse)
+        else:
+            return(score)
         )
 
 
     def print(self) -> None:
         """Print PSSM object (similar to Logo format)
+           Prints a consensus sequence, with uppercase characters
+           depending on user-defined threshold: upper_print_probability
         """
 
         recognized = ""
