@@ -295,11 +295,6 @@ class OrganismFactory:
         child2.set_recognizers(child2_reco)
         child2.set_connectors(child2_conn)
         
-        print("\n")
-        child1.print()
-        print("\n")
-        child2.print()
-        
         return [child1, child2]
 
     def import_organisms(self, file_name: str) -> list:

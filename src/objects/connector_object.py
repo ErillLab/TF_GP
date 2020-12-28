@@ -15,14 +15,14 @@ import math
 
 
 def norm_pdf(x, mu, sigma):
-"""Normal probablity densitity function
+    """Normal probablity densitity function
    computes the normal probability density function
    used to compute the energy provided by the connector
    the distance at which connecting nodes are placed
    is the 'x' for the function, which will return the
    probability of observing said distance under the 
    connector model
-"""
+   """
     if sigma != 0:
         var = float(sigma)**2
         denom = (2*math.pi*var)**.5

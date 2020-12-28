@@ -240,7 +240,7 @@ class PssmObject():
             return(score_reverse)
         else:
             return(score)
-        )
+        
 
 
     def print(self) -> None:
