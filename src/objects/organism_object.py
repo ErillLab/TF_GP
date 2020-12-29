@@ -85,11 +85,15 @@ class OrganismObject:
         self.mutate_probability_substitute_pssm = conf[
             "MUTATE_PROBABILITY_SUBSTITUTE_PSSM"
         ]
-        self.mutate_probability_rise_child = conf[
-            "MUTATE_PROBABILITY_RISE_CHILD"
+        
+        self.indel_method = conf[
+            "INDEL_METHOD"
         ]
-        self.mutate_probability_sunk_child = conf[
-            "MUTATE_PROBABILITY_SUNK_CHILD"
+        self.mutate_probability_delete_recognizer = conf[
+            "MUTATE_PROBABILITY_DELETE_RECOGNIZER"
+        ]
+        self.mutate_probability_insert_recognizer = conf[
+            "MUTATE_PROBABILITY_INSERT_RECOGNIZER"
         ]
         self.mutate_probability_node_mutation = conf[
             "MUTATE_PROBABILITY_NODE_MUTATION"
@@ -123,59 +127,229 @@ class OrganismObject:
                                            components
         """
 
-
-        # Rise the level of a child
-        if random.random() < self.mutate_probability_rise_child:
-
-            n_nodes = self.count_nodes()
-            random_node = random.randint(0, n_nodes - 1)
-            rised_node = self.get_node(random_node)
-            parent_node = self.get_parent(rised_node._id)
-
-            #
-            if not rised_node._id == self.root_node._id:
-
-                parent1 = self.get_parent(rised_node._id)
-                parent2 = self.get_parent(parent1["self"]._id)
-
-                if parent2["is_root_node"]:
-                    self.root_node = rised_node
+        
+        # Delete a recognizer (and one parent connector)
+        if random.random() < self.mutate_probability_delete_recognizer:
+            
+            if self.indel_method == "blind":
+    
+                n_recognizers = self.count_recognizers()
+                # Choose randomly the recognizer to be deleted
+                recognizer_idx = random.randint(0, n_recognizers - 1)
+                if recognizer_idx == 0:
+                    # If the recognizer to delete is the first, the connector to
+                    # delete is the one to the right
+                    # ( same index: connector_idx = recognizer_idx = 0 )
+                    connector_idx = recognizer_idx
+                elif recognizer_idx == n_recognizers - 1:
+                    # If the recognizer to delete is the last, the connector to
+                    # delete is the one to the left
+                    # ( different index: connector_idx = recognizer_idx - 1 )
+                    connector_idx = recognizer_idx - 1
                 else:
-                    if parent2["is_left_side"]:
-                        parent2["self"].set_node1(rised_node)
+                    # if the recognizer to delete is in not a terminal recognizer
+                    # of the chain, the parent connector to be deleted (left/riht)
+                    # is chosen randomly
+                    if random.random() < 0.5:
+                        connector_idx = recognizer_idx
                     else:
-                        parent2["self"].set_node2(rised_node)
-
-        # Add complexity to the organism
-        if random.random() < self.mutate_probability_sunk_child:
-            n_nodes = self.count_nodes()
-            random_node = random.randint(0, n_nodes - 1)
-            suken_node = self.get_node(random_node)
-            parent_node = self.get_parent(suken_node._id)
-
-            new_node = org_factory.create_connection(0)
-
-            if parent_node["is_root_node"]:
-                self.root_node = new_node
-            else:
-                if parent_node["is_left_side"]:
-
-                    parent_node["self"].set_node1(new_node)
+                        connector_idx = recognizer_idx - 1
+                
+                new_recognizers = (self.recognizers[:recognizer_idx] +
+                                   self.recognizers[recognizer_idx + 1:])
+                new_connectors = (self.connectors[:connector_idx] +
+                                   self.connectors[connector_idx + 1:])
+                
+                self.recognizers = new_recognizers
+                self.connectors = new_connectors
+            
+            
+            if self.indel_method == "intelligent":
+                
+                n_recognizers = self.count_recognizers()
+                # Choose randomly the recognizer to be deleted
+                recognizer_idx = random.randint(0, n_recognizers - 1)
+                if recognizer_idx == 0:
+                    # If the recognizer to delete is the first, the connector to
+                    # delete is the one to the right
+                    # ( same index: connector_idx = recognizer_idx = 0 )
+                    connector_idx = recognizer_idx
+                elif recognizer_idx == n_recognizers - 1:
+                    # If the recognizer to delete is the last, the connector to
+                    # delete is the one to the left
+                    # ( different index: connector_idx = recognizer_idx - 1 )
+                    connector_idx = recognizer_idx - 1
                 else:
-                    parent_node["self"].set_node2(new_node)
-
-            if random.random() < 0.5:
-                new_node.set_node1(suken_node)
-            else:
-                new_node.set_node2(suken_node)
-
+                    # if the recognizer to delete is in not a terminal recognizer
+                    # of the chain, the parent connector to be deleted (left/riht)
+                    # is chosen randomly
+                    if random.random() < 0.5:
+                        # Index of the parent connector that will be deleted
+                        connector_idx = recognizer_idx
+                        # Index of the parent connector that will be adjusted
+                        connector_to_stretch = recognizer_idx - 1
+                    else:
+                        # Index of the parent connector that will be deleted
+                        connector_idx = recognizer_idx - 1
+                        # Index of the parent connector that will be adjusted
+                        connector_to_stretch = recognizer_idx
+                    
+                    # Adjust parameters of the neighbour connector
+                    ''' The parent connector that is not deleted is modified,
+                    so that it can span the gap left by the deletion, witout
+                    heavily affecting the placement of the nodes to the side of
+                    the deletion point.
+                    '''
+                    # The average distance (mu) of the deleted connector is
+                    # added to its mu
+                    adj_mu = (self.connectors[connector_to_stretch]._mu +
+                              self.connectors[connector_idx]._mu)
+                    # Its standard deviation (sigma) becomes the square root of
+                    # the sum of the squares of the sigmas (under assumption of
+                    # independence between the two random variables)
+                    adj_sigma = (self.connectors[connector_to_stretch]._sigma ** 2 +
+                                self.connectors[connector_idx]._sigma ** 2)**(1/2)
+                    # set new mu and new sigma
+                    self.connectors[connector_to_stretch].set_mu(adj_mu)
+                    self.connectors[connector_to_stretch].set_sigma(adj_sigma)
+                
+                new_recognizers = (self.recognizers[:recognizer_idx] +
+                                   self.recognizers[recognizer_idx + 1:])
+                new_connectors = (self.connectors[:connector_idx] +
+                                   self.connectors[connector_idx + 1:])
+                
+                self.recognizers = new_recognizers
+                self.connectors = new_connectors
+        
+        
+        
+        # Insert a recognizer (and one parent connector)
+        if random.random() < self.mutate_probability_insert_recognizer:
+            
+            new_connector = org_factory.create_connector()
+            new_recognizer = org_factory.create_pssm()
+            
+            if self.indel_method == "blind":
+                
+                n_recognizers = self.count_recognizers()
+                # Choose randomly the recognizer next to which the insertion
+                # is going to occur
+                recognizer_idx = random.randint(0, n_recognizers - 1)
+                # Choose randomly whether the insertion is going to be to the
+                # left or to the right of the considered recognizer
+                
+                if random.random() < 0.5:  # Insertion occurs to the left
+                    # First connector after insertion point and first
+                    # recognizer after insertion point
+                    connector_idx = recognizer_idx
+                    
+                else:  # Insertion occurs to the right
+                    # First connector after insertion point
+                    connector_idx = recognizer_idx
+                    # First recognizer after insertion point
+                    recognizer_idx += 1
+                
+                new_recognizers = (self.recognizers[:recognizer_idx] +
+                                   [new_recognizer] +
+                                   self.recognizers[recognizer_idx:])
+                new_connectors = (self.connectors[:connector_idx] +
+                                   [new_connector] +
+                                   self.connectors[connector_idx:])
+                
+                self.recognizers = new_recognizers
+                self.connectors = new_connectors
+            
+            
+            if self.indel_method == "intelligent":
+                
+                n_recognizers = self.count_recognizers()
+                # Choose randomly the recognizer next to which the insertion
+                # is going to occur
+                recognizer_idx = random.randint(0, n_recognizers - 1)
+                # Choose randomly whether the insertion is going to be to the
+                # left or to the right of the considered recognizer
+                connector_to_compress = None
+                if random.random() < 0.5:  # Insertion occurs to the left
+                    # First connector after insertion point and first
+                    # recognizer after insertion point
+                    connector_idx = recognizer_idx
+                    
+                    if recognizer_idx != 0:
+                        connector_to_compress = recognizer_idx - 1
+                        # (No compression is required if insertion occurs to
+                        # the left of the first recognizer of the chain)
+                        
+                else:  # Insertion occurs to the right
+                    # First connector after insertion point
+                    connector_idx = recognizer_idx
+                    
+                    if recognizer_idx != n_recognizers - 1:
+                        connector_to_compress = recognizer_idx
+                        # (No compression is required if insertion occurs to
+                        # the right of the last recognizer of the chain)
+                    
+                    # First recognizer after insertion point
+                    recognizer_idx += 1
+                
+                if connector_to_compress != None:
+                    
+                    # Adjust MUs
+                    mu_old_connector = self.connectors[connector_to_compress]._mu
+                    mu_new_connector = new_connector._mu
+                    current_sum_mus = mu_old_connector + mu_new_connector
+                    expected_sum_mus = mu_old_connector
+                    
+                    mu_scaling_factor =  expected_sum_mus / current_sum_mus
+                    # Compress the neighbour connector
+                    self.connectors[connector_to_compress].set_mu(
+                        mu_old_connector * mu_scaling_factor
+                    )
+                    # Compress the new inserted connector
+                    new_connector.set_mu(
+                        mu_new_connector * mu_scaling_factor
+                    )
+                    
+                    # Adjust SIGMAs
+                    var_old_connector = self.connectors[connector_to_compress]._sigma ** 2
+                    var_new_connector = new_connector._sigma**2
+                    current_sum_variances = var_old_connector + var_new_connector
+                    expected_sum_variances = var_old_connector
+                    
+                    var_scaling_factor =  expected_sum_variances / current_sum_variances
+                    # Compress the neighbour connector
+                    self.connectors[connector_to_compress].set_sigma(
+                        np.sqrt(var_old_connector * var_scaling_factor)
+                    )
+                    # Compress the new inserted connector
+                    new_connector.set_sigma(
+                        np.sqrt(var_new_connector * var_scaling_factor)
+                    )
+                
+                
+                new_recognizers = (self.recognizers[:recognizer_idx] +
+                                   [new_recognizer] +
+                                   self.recognizers[recognizer_idx:])
+                new_connectors = (self.connectors[:connector_idx] +
+                                   [new_connector] +
+                                   self.connectors[connector_idx:])
+                
+                self.recognizers = new_recognizers
+                self.connectors = new_connectors
+        
+        '''
         # Mutate a random node
         if random.random() < self.mutate_probability_node_mutation:
 
             n_nodes = self.count_nodes()
-            random_node = random.randint(0, n_nodes - 1)
-            mutated_node = self.get_node(random_node)
-            mutated_node.mutate(org_factory)
+            random_node_idx = random.randint(0, n_nodes - 1)
+            if random_node_idx < self.count_recognizers():
+                # mutate a recognizer
+                self.recognizers[random_node_idx].mutate(org_factory)
+            else:
+                # mutate a connector
+                connector_idx = random_node_idx - self.count_recognizers()
+                self.connectors[connector_idx].mutate(org_factory)
+        '''
 
 
     def get_seq_fitness(self, s_dna: str) -> dict:
