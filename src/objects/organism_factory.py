@@ -105,34 +105,10 @@ class OrganismFactory:
         new_organism.recognizers.append(new_recognizer)
 
         return new_organism
-
-    def create_connection(
-            self, connection_probability: float
-    ) -> ConnectorObject:
-        """It returns a connector object with its internal parameters (mu, sigma)
-        assigned
-
-        Args:
-            connection_probability: Probability to generate a connector instead
-                                    of a recognizer
-
-        Returns:
-            A new Connector 
-        """
-
-        # Assign a random value to mu and sigma
-        _mu = random.randint(self.min_mu, self.max_mu)
-        _sigma = random.randint(self.min_sigma, self.max_sigma)
-
-        # Create the new connection
-        new_connection = ConnectorObject(_mu, _sigma, self.conf_con)
-
-        return new_connection
-    
     
     def create_connector(self) -> ConnectorObject:
-        """It returns a connector object
-
+        """It returns a connector object with its internal parameters (mu, sigma)
+        assigned
         """
 
         # Assign a random value to mu and sigma
