@@ -59,57 +59,75 @@ def gini_RSV(values_for_each_class):
 
 class OrganismObject:
     """Organism object
+       The Organism object essentially contains two vectors:
+       - A vector of connector objects
+       - A vector of recognizer objects
+       The order of the elements in these vectors determine, implicitly,
+       the connections between the elements (i.e. what recognizers a
+       particular connector is connecting)
     """
 
     def __init__(self, _id: int, conf: dict, max_pssm_length: int) -> None:
         """Organism constructor
 
         Args:
-            _id: Organism identifier
-            conf: Configuration from JSON file
-            max_pssm_length: Maximum column size of the pssm recognizer
+            _id: Organism identifier (assigned by factory)
+            conf: Organism-specific configuration values from JSON file
+            self.pwm_length: Maximum column size of the pssm recognizer
+	    [will prevent mutations from going over max pssm length]
         """
         self._id = _id
         
-        self.recognizers = []  # < - - - - - - - - - - NEW ATTRIBUTE
-        self.connectors = []  # < - - - - - - - - - - NEW ATTRIBUTE
-        
-        #self.num_nodes = 0
-        #self.num_recognizers = 0
-
+	# Instantiate recognizer and connector vectors
+        self.recognizers = []  
+        self.connectors = []  
+	
+	# assign organism-specific parameters
+	
+	# whether fitness is computed over sequences as sum or average
         self.cumulative_fit_method = conf["CUMULATIVE_FIT_METHOD"]
         
+	# energy thresholding parameters (to prevent negative energy values)
         self.energy_threshold_method = conf["ENERGY_THRESHOLD_METHOD"]
         self.energy_threshold_value = conf["ENERGY_THRESHOLD_PARAM"]
         
+	# probability of replacing PSSM by random PSSM
         self.mutate_probability_substitute_pssm = conf[
             "MUTATE_PROBABILITY_SUBSTITUTE_PSSM"
         ]
         
+	# type of indel operator: 
+	# - blind (preserves connectors)
+	# - intelligent (merges connectors) 
         self.indel_method = conf[
             "INDEL_METHOD"
         ]
+	
+	#probability of deleting/inserting a recognizer
         self.mutate_probability_delete_recognizer = conf[
             "MUTATE_PROBABILITY_DELETE_RECOGNIZER"
         ]
         self.mutate_probability_insert_recognizer = conf[
             "MUTATE_PROBABILITY_INSERT_RECOGNIZER"
         ]
-        self.mutate_probability_node_mutation = conf[
+	
+        # probability of mutating a node
+	self.mutate_probability_node_mutation = conf[
             "MUTATE_PROBABILITY_NODE_MUTATION"
         ]
+	
+	# min and maximum number of nodes allowed
         self.min_nodes = conf["MIN_NODES"]
         self.max_nodes = conf["MAX_NODES"]
+	
+	# determines whether organism is tracked through evolution
         self.is_tracked = False
 
-        self.is_automatic_placement_options = conf[
-            "AUTOMATIC_PLACEMENT_OPTIONS"
-        ]
+	# maximum length of PSSMs allowed
         self.max_pssm_length = max_pssm_length
 
 
-    # Setters an getters
-
+    # Setters and getters
     def set_is_tracked(self, new_tracked: bool):
         """Setter is_tracked
 
@@ -131,6 +149,7 @@ class OrganismObject:
         # Delete a recognizer (and one parent connector)
         if random.random() < self.mutate_probability_delete_recognizer:
             
+			# "blind" method: the remaining connector is left unchanged
             if self.indel_method == "blind":
     
                 n_recognizers = self.count_recognizers()
@@ -155,15 +174,20 @@ class OrganismObject:
                     else:
                         connector_idx = recognizer_idx - 1
                 
+				# recreate vector of recognizers and connectors
+				# skipping the recgonizer/connector selected for deletion
                 new_recognizers = (self.recognizers[:recognizer_idx] +
                                    self.recognizers[recognizer_idx + 1:])
                 new_connectors = (self.connectors[:connector_idx] +
                                    self.connectors[connector_idx + 1:])
                 
+				# assign new vectors
                 self.recognizers = new_recognizers
                 self.connectors = new_connectors
             
-            
+			# "intelligent" method: a new connector is created merging
+			# the information of the right and left connectors for the
+			# recognizer targeted for deletion
             if self.indel_method == "intelligent":
                 
                 n_recognizers = self.count_recognizers()
@@ -196,7 +220,7 @@ class OrganismObject:
                     
                     # Adjust parameters of the neighbour connector
                     ''' The parent connector that is not deleted is modified,
-                    so that it can span the gap left by the deletion, witout
+                    so that it can span the gap left by the deletion, without
                     heavily affecting the placement of the nodes to the side of
                     the deletion point.
                     '''
@@ -212,12 +236,15 @@ class OrganismObject:
                     # set new mu and new sigma
                     self.connectors[connector_to_stretch].set_mu(adj_mu)
                     self.connectors[connector_to_stretch].set_sigma(adj_sigma)
-                
+
+				# recreate vector of recognizers and connectors
+				# skipping the recgonizer/connector selected for deletion					
                 new_recognizers = (self.recognizers[:recognizer_idx] +
                                    self.recognizers[recognizer_idx + 1:])
                 new_connectors = (self.connectors[:connector_idx] +
                                    self.connectors[connector_idx + 1:])
                 
+				# assign new vectors
                 self.recognizers = new_recognizers
                 self.connectors = new_connectors
         
@@ -226,9 +253,12 @@ class OrganismObject:
         # Insert a recognizer (and one parent connector)
         if random.random() < self.mutate_probability_insert_recognizer:
             
+			# instantiate the new recognizer and connector
             new_connector = org_factory.create_connector()
             new_recognizer = org_factory.create_pssm()
             
+			# "blind" method: one of the existing connectors is used
+			# (unchanged) to connect to the new recognizer
             if self.indel_method == "blind":
                 
                 n_recognizers = self.count_recognizers()
@@ -249,6 +279,8 @@ class OrganismObject:
                     # First recognizer after insertion point
                     recognizer_idx += 1
                 
+				# recreate vector of connectors/recognizers, adding
+				# the newly minted recognizer+connector
                 new_recognizers = (self.recognizers[:recognizer_idx] +
                                    [new_recognizer] +
                                    self.recognizers[recognizer_idx:])
@@ -256,24 +288,33 @@ class OrganismObject:
                                    [new_connector] +
                                    self.connectors[connector_idx:])
                 
+				# assign new connector/recognizer vectors
                 self.recognizers = new_recognizers
                 self.connectors = new_connectors
             
             
-            if self.indel_method == "intelligent":
+			# "intelligent" method: the existing and new connector are
+			# "averaged" so that their mu and sigma are "equivalent" to
+			# to the connector previously occupying the position where
+			# the new recognizer has been inserted
+			if self.indel_method == "intelligent":
                 
                 n_recognizers = self.count_recognizers()
                 # Choose randomly the recognizer next to which the insertion
                 # is going to occur
                 recognizer_idx = random.randint(0, n_recognizers - 1)
-                # Choose randomly whether the insertion is going to be to the
+				
+				# set no compression as default (for terminal insertion cases)
+				connector_to_compress = None
+
+				# Choose randomly whether the insertion is going to be to the
                 # left or to the right of the considered recognizer
-                connector_to_compress = None
                 if random.random() < 0.5:  # Insertion occurs to the left
                     # First connector after insertion point and first
                     # recognizer after insertion point
                     connector_idx = recognizer_idx
-                    
+
+					# if the new recognizer is NOT be the first in the chain
                     if recognizer_idx != 0:
                         connector_to_compress = recognizer_idx - 1
                         # (No compression is required if insertion occurs to
@@ -283,6 +324,7 @@ class OrganismObject:
                     # First connector after insertion point
                     connector_idx = recognizer_idx
                     
+					# if the new recognizer is NOT be the last in the chain
                     if recognizer_idx != n_recognizers - 1:
                         connector_to_compress = recognizer_idx
                         # (No compression is required if insertion occurs to
@@ -291,6 +333,7 @@ class OrganismObject:
                     # First recognizer after insertion point
                     recognizer_idx += 1
                 
+				# if connector needs to be "compressed" (not a terminal insertion)
                 if connector_to_compress != None:
                     
                     # Adjust MUs
@@ -325,7 +368,9 @@ class OrganismObject:
                         np.sqrt(var_new_connector * var_scaling_factor)
                     )
                 
-                
+				# recreate vector of connectors/recognizers, adding
+				# the newly minted recognizer+connector and containing
+				# also the "compressed" existing connector
                 new_recognizers = (self.recognizers[:recognizer_idx] +
                                    [new_recognizer] +
                                    self.recognizers[recognizer_idx:])
@@ -333,10 +378,10 @@ class OrganismObject:
                                    [new_connector] +
                                    self.connectors[connector_idx:])
                 
+				# assign new connector/recognizer vectors
                 self.recognizers = new_recognizers
                 self.connectors = new_connectors
         
-        '''
         # Mutate a random node
         if random.random() < self.mutate_probability_node_mutation:
 
@@ -349,7 +394,6 @@ class OrganismObject:
                 # mutate a connector
                 connector_idx = random_node_idx - self.count_recognizers()
                 self.connectors[connector_idx].mutate(org_factory)
-        '''
 
 
     def get_seq_fitness(self, s_dna: str) -> dict:
@@ -437,59 +481,34 @@ class OrganismObject:
         # return score, blocks and blokcers and PSSMs scores in that sequence
         return node_root[0]
     
-    def get_binding_energies(self, a_dna: list) -> list:
-        """Return a list containing the binding energies on the sequences
-        provided as input data
-
-        Args:
-            a_dna: list of dna sequences
-
-        Returns:
-            list of all the binding energies
-        """
-        scores = []
-        ginis = []
-        for s_dna in a_dna:
-            sfit = self.get_seq_fitness(s_dna)
-            energy = sfit["energy"]
-            pssm_scores = sfit["recognizers_scores"]
-            
-            if len(pssm_scores) > 0:
-                gini = gini_RSV(pssm_scores)  # Gini coefficient
-                ginis.append(gini)
-            
-            scores.append(energy)
-
-        # Compute the average Gini coefficient as the geometric mean
-        if len(ginis) == 0:  # Case where no placement was available for any sequence
-            avg_gini = 1  # maximum penalty is arbitrarily assigned
-        else:
-            avg_gini = np.prod(ginis) ** (1/len(ginis))  # geometric mean
-        
-        return {"energy_scores": scores, "avg_gini": avg_gini}
     
-    def get_discriminative_fitness(self, a_dna: list) -> float:
+    def get_additive_fitness(self, a_dna: list) -> float:
         """Return the total Fitness for an array of DNA sequences and the
-        fitness method
+           chosen fitness method
 
         Args:
             a_dna: list of dna sequences
 
         Returns:
-            score assigned to the organism
+            average/sum of the energy of the organism on each sequence
+			average of the gini coefficient of the organism's recognizers on each sequence
         """
 
         scores = []
         ginis = []
+		# for each sequence in the provided sequence set
         for s_dna in a_dna:
+			# get the energy and pssm scores
             sfit = self.get_seq_fitness(s_dna)
             energy = sfit["energy"]  # energy
             pssm_scores = sfit["recognizers_scores"]  # PSSMs scores
             
+			# compute and append the Gini coefficient
             if len(pssm_scores) > 0:
                 gini = gini_RSV(pssm_scores)  # Gini coefficient
                 ginis.append(gini)
-
+			
+			# append energy
             scores.append(energy)
         
         if self.cumulative_fit_method == "sum":
