@@ -1,4 +1,6 @@
 """Organism Factory creates organisms, connectors and pssms
+   It performs all operations dealing with multiple objects, 
+   such as organism recombination.
 """
 
 import random
@@ -10,25 +12,35 @@ from .pssm_object import PssmObject
 
 
 class OrganismFactory:
-    """Factory
+    """Factory class
     """
 
     def __init__(self, conf_org, conf_org_fac, conf_con, conf_pssm) -> None:
-
+        """Instantiates an OrganismFactory object.
+           Reads in the configuration paramaters for the factory and
+           for all object types (organism, connector and PSSM recognizer)
+        """
         self._id = 0
         
+        # lambda parameter for Poisson distribution that will instantiate
+        # organism. lambda is the expected number of recognizers in the
+        # organism (and also its variance)
         self.num_recognizers_lambda_param = conf_org_fac[
             "NUM_RECOGNIZERS_LAMBDA_PARAM"
         ]
 
+        # minimum and maximum values allowed for connector mu's
         self.min_mu = conf_org_fac["MIN_MU"]
         self.max_mu = conf_org_fac["MAX_MU"]
 
+        # minimum and maximum values allowed for connector sigma's
         self.min_sigma = conf_org_fac["MIN_SIGMA"]
         self.max_sigma = conf_org_fac["MAX_SIGMA"]
-
+        
+        # length of PSSM's
         self.pwm_length = conf_org_fac["PWM_LENGTH"]
-
+        
+        # PSSM object probability parameters
         self.pwm_probability_step = conf_org_fac[
             "PWM_PROBABILITY_STEP"
         ]  # It should be a BASE_PROBABILITY divisor Ex: 1, 2, 4, 5, 10, 25...
@@ -37,18 +49,10 @@ class OrganismFactory:
             "PWM_PROBABILITY_DECIMALS"
         ]
 
+        # assign organism, connector and pssm configurations
         self.conf_org = conf_org
         self.conf_con = conf_con
         self.conf_pssm = conf_pssm
-        
-        # Add ENERGY_THRESHOLD_METHOD and ENERGY_THRESHOLD_PARAM from
-        # conf_org to conf_con and conf_pssm
-        self.conf_con["ENERGY_THRESHOLD_METHOD"] = conf_org["ENERGY_THRESHOLD_METHOD"]
-        self.conf_pssm["ENERGY_THRESHOLD_METHOD"] = conf_org["ENERGY_THRESHOLD_METHOD"]
-        
-        self.conf_con["ENERGY_THRESHOLD_PARAM"] = conf_org["ENERGY_THRESHOLD_PARAM"]
-        self.conf_pssm["ENERGY_THRESHOLD_PARAM"] = conf_org["ENERGY_THRESHOLD_PARAM"]
-        
 
     def get_id(self) -> int:
         """Gives a new ID for an organism
@@ -63,11 +67,17 @@ class OrganismFactory:
 
     def get_organism(self) -> OrganismObject:
         """It creates and returns a full organism datastructure
+           An organism contains essentially two lists:
+           - a recognizer list
+           - a connector list
+           The placement of these elements in the lists defines
+           implicitly the connections between the elements.
 
         Returns:
             A new organism based on JSON config file
         """
-
+        
+        # instantiates organism with organism configuration and pssm columns
         new_organism = OrganismObject(self.get_id(), self.conf_org, self.conf_pssm["MAX_COLUMNS"])
         
         # The number of recognizers of the organism is randomly chosen from a
@@ -80,16 +90,18 @@ class OrganismFactory:
         number_of_recognizers = np.random.poisson(self.num_recognizers_lambda_param - 1)
         number_of_recognizers += 1
         
+        # for each recognizer in the organism
         for i in range(number_of_recognizers - 1):
-            # New recognizer
+            # instantiate new recognizer and append it to organism's recognizer list
             new_recognizer = self.create_pssm(self.pwm_length)
             new_organism.recognizers.append(new_recognizer)
-            # New connector
+            # instantiate new connector and append it to organism's connector list
             _mu = random.randint(self.min_mu, self.max_mu)
             _sigma = random.randint(self.min_sigma, self.max_sigma)
             new_connector = ConnectorObject(_mu, _sigma, self.conf_con)
             new_organism.connectors.append(new_connector)
-        new_recognizer = self.create_pssm(self.pwm_length)  # last recognizer
+        # insert last recognizer in the chain and add it to list
+        new_recognizer = self.create_pssm(self.pwm_length)
         new_organism.recognizers.append(new_recognizer)
 
         return new_organism
@@ -97,15 +109,15 @@ class OrganismFactory:
     def create_connection(
             self, connection_probability: float
     ) -> ConnectorObject:
-        """It returns a connector object with its nodes assigned depending on
-        connectionProbability
+        """It returns a connector object with its internal parameters (mu, sigma)
+        assigned
 
         Args:
             connection_probability: Probability to generate a connector instead
                                     of a recognizer
 
         Returns:
-            A new Connection with recognizers included
+            A new Connector 
         """
 
         # Assign a random value to mu and sigma
@@ -114,29 +126,6 @@ class OrganismFactory:
 
         # Create the new connection
         new_connection = ConnectorObject(_mu, _sigma, self.conf_con)
-
-        # Set the connection node to a connector or PSSM object, based on a
-        # random probability. If connector object is selected, probability of
-        # getting another connector is reduced by PROBABILITY_REDUCED_FACTOR
-        node1 = None
-        if random.random() < connection_probability:
-            node1 = self.create_connection(
-                connection_probability * self.reducer_probability_factor
-            )
-        else:
-            node1 = self.create_pssm(self.pwm_length)
-
-        new_connection.set_node1(node1)
-
-        node2 = None
-        if random.random() < connection_probability:
-            node2 = self.create_connection(
-                connection_probability * self.reducer_probability_factor
-            )
-        else:
-            node2 = self.create_pssm(self.pwm_length)
-
-        new_connection.set_node2(node2)
 
         return new_connection
     
@@ -159,24 +148,24 @@ class OrganismFactory:
         """It return a PSSM object with a specific length
 
         Args:
-            min_length: minimum positions a recognizer can recognize
-            max_length: maximum positions a recognizer can recognize
+            length: length (columns) of the PSSM
+            if None, the default self.pwm_length value is used
 
         Returns:
-            A pssm with an initializated PWM
+            A pssm object with an initializated PWM
         """
         if length == None:  # !!! I guess there's a better way. length=self.pwm_length in the input is not allowed
             length = self.pwm_length
         
         pwm = []
-        # Generate as much as needed
+        # Generate as many PSSM columns as needed
         for _ in range(length):
             pwm.append(self.get_pwm_column())
 
         return PssmObject(np.array(pwm), self.conf_pssm)
 
     def get_pwm_column(self) -> dict:
-        """Generates a single column of the pwm
+        """Generates a single column for a PWM
 
         Returns:
             a random probability for each base [a, c, g, t]
@@ -235,24 +224,89 @@ class OrganismFactory:
         }
     
     def get_children(self, parent1, parent2):
+        """Implements the recombination operator
+           Inputs:
+           - parent1, parent2 - two parent organisms
+           Returns:
+           - child1, child2 - two children organisms
+           
+           For recombination, organisms are split at a connector.
+           Four recombination possibilities are then allowed, depending
+           on which side of the connector's link to the chain is preserved.
+           
+           This is a conservative approach to recombination, where the
+           parent organisms' connectors are preserved, rather than generating
+           new connectors randomly to stich the two split sub-chains.
+           
+           Given two organisms 1 and 2, and two split points (connectors),
+           we obtain L1 and R1 as the subchains in 1, and L2 and R2 in 2.
+           
+           Recombination cases:
+           - Left-left
+             This preserves the left link for both connectors, meaning that
+             - L1 contains the full connector for the split [linking right]
+             - L2 contains the full connector for the split [linking right]
+             - R1 is connectorless at the split
+             - R2 is connectorless at the split
+             This results in the following offspring:
+             - organism L2-R1
+             - organism L1-R2
+             
+           - Left-right
+             - L1 contains the full connector for the split [linking right]
+             - R2 contains the full connector for the split [linking left]
+             - R1 is connectorless at the split
+             - L2 is connectorless at the split
+             This results in the following offspring:
+             - organism R1-R2
+             - organism L1-L2
+             
+           - Right-left
+             - R1 contains the full connector for the split [linking left]
+             - L2 contains the full connector for the split [linking right]
+             - R2 is connectorless at the split
+             - L1 is connectorless at the split
+             This results in the following offspring:
+             - organism R2-R1
+             - organism L2-L1
+             
+           - Right-left
+             - R1 contains the full connector for the split [linking left]
+             - L2 contains the full connector for the split [linking right]
+             - R2 is connectorless at the split
+             - L1 is connectorless at the split
+             This results in the following offspring:
+             - organism R2-R1
+             - organism L2-L1
+             
+           - Right-right
+             - R1 contains the full connector for the split [linking left]
+             - R2 contains the full connector for the split [linking left]
+             - L2 is connectorless at the split
+             - L1 is connectorless at the split
+             This results in the following offspring:
+             - organism L2-R1
+             - organism L1-R2
+        """
         
+        # Select one connector in each parent for the split
         index_1 = parent1.get_random_connector()
         index_2 = parent2.get_random_connector()
         
+        # Instantiate children nodes
         child1 = OrganismObject(self.get_id(), self.conf_org, self.conf_pssm["MAX_COLUMNS"])
         child2 = OrganismObject(self.get_id(), self.conf_org, self.conf_pssm["MAX_COLUMNS"])
         
+        # decide how the split is handled
         if random.random() < 0.5:
-            
-            # First parent keeps the broken connector in the left chunk
+            # First parent keeps the broken connector in the LEFT chunk
             L1, R1 = parent1.break_chain(index_1, "left")
 
             if random.random() < 0.5:
-                # Second parent keeps the broken connector in the left chunk
+                # Second parent keeps the broken connector in the LEFT chunk
                 L2, R2 = parent2.break_chain(index_2, "left")
             
                 # Recombination: case 1 (left, left)
-                
                 # Child 1 is (L1 + R2)
                 child1_reco = L1["recognizers"] + R2["recognizers"]
                 child1_conn = L1["connectors"] + R2["connectors"]
@@ -261,11 +315,10 @@ class OrganismFactory:
                 child2_conn = L2["connectors"] + R1["connectors"]
                 
             else:
-                # Second parent keeps the broken connector in the right chunk
+                # Second parent keeps the broken connector in the RIGHT chunk
                 L2, R2 = parent2.break_chain(index_2, "right")
             
                 # Recombination: case 2 (left, right)
-                
                 # Child 1 is (L1 + L2)
                 child1_reco = L1["recognizers"] + L2["recognizers"]
                 child1_conn = L1["connectors"] + L2["connectors"]
@@ -274,30 +327,26 @@ class OrganismFactory:
                 child2_conn = R1["connectors"] + R2["connectors"]
                 
         else:
-            
-            # First parent keeps the broken connector in the right chunk
+            # First parent keeps the broken connector in the RIGHT chunk
             L1, R1 = parent1.break_chain(index_1, "right")
             
             if random.random() < 0.5:
-                # Second parent keeps the broken connector in the left chunk
+                # Second parent keeps the broken connector in the LEFT chunk
                 L2, R2 = parent2.break_chain(index_2, "left")
             
                 # Recombination: case 3 (right, left)
-                
                 # Child 1 is (L2 + L1)
                 child1_reco = L2["recognizers"] + L1["recognizers"]
                 child1_conn = L2["connectors"] + L1["connectors"]
                 # Child 2 is (R2 + R1)
                 child2_reco = R2["recognizers"] + R1["recognizers"]
                 child2_conn = R2["connectors"] + R1["connectors"]
-                
             
             else:
-                # Second parent keeps the broken connector in the right chunk
+                # Second parent keeps the broken connector in the RIGHT chunk
                 L2, R2 = parent2.break_chain(index_2, "right")
             
                 # Recombination: case 4 (right, right)
-                
                 # Child 1 is (L1 + R2)
                 child1_reco = L1["recognizers"] + R2["recognizers"]
                 child1_conn = L1["connectors"] + R2["connectors"]
