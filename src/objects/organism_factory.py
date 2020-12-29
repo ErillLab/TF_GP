@@ -128,17 +128,35 @@ class OrganismFactory:
         new_connection = ConnectorObject(_mu, _sigma, self.conf_con)
 
         return new_connection
+    
+    
+    def create_connector(self) -> ConnectorObject:
+        """It returns a connector object
 
-    def create_pssm(self, length: int) -> PssmObject:
-        """It returns a PSSM object with a specific length
+        """
+
+        # Assign a random value to mu and sigma
+        _mu = random.randint(self.min_mu, self.max_mu)
+        _sigma = random.randint(self.min_sigma, self.max_sigma)
+
+        # Create the new connector
+        new_connector = ConnectorObject(_mu, _sigma, self.conf_con)
+
+        return new_connector
+
+    def create_pssm(self, length = None) -> PssmObject:
+        """It return a PSSM object with a specific length
 
         Args:
-            min_length: minimum positions a recognizer can recognize
-            max_length: maximum positions a recognizer can recognize
+            length: length (columns) of the PSSM
+            if None, the default self.pwm_length value is used
 
         Returns:
             A pssm object with an initializated PWM
         """
+        if length == None:  # !!! I guess there's a better way. length=self.pwm_length in the input is not allowed
+            length = self.pwm_length
+        
         pwm = []
         # Generate as many PSSM columns as needed
         for _ in range(length):

@@ -108,17 +108,12 @@ class ConnectorObject():
         # LINEAR SIGMA MUTATION
         if random.random() < self.mutate_probability_sigma:
             # Update sigma with a random permutation within allowed interval
-            self._sigma += random.uniform(
-                -self.mutate_variance_sigma, self.mutate_variance_sigma
+            self._sigma = abs(
+                self._sigma + random.uniform(-self.mutate_variance_sigma,
+                                             self.mutate_variance_sigma)
             )
+            
 
-        '''
-        # FAST LOG SIGMA MUTATION
-        if random.random() < self.mutate_probability_sigma:
-            # Update sigma with random multiplicative change from allowed interval
-            self._sigma *= random.uniform(1/self.mutate_variance_sigma,
-                                          self.mutate_variance_sigma)
-        '''
 
         '''
         # LOGARITHMIC SIGMA MUTATION
@@ -135,8 +130,9 @@ class ConnectorObject():
         # LINEAR MU MUTATION
         if random.random() < self.mutate_probability_mu:
             # Update mu with a random permutation within allowed interval
-            self._mu += random.uniform(
-                -self.mutate_variance_mu, self.mutate_variance_mu
+            self._mu = abs(
+                self._mu + random.uniform(-self.mutate_variance_mu,
+                                          self.mutate_variance_mu)
             )
 
     # pylint: enable=W0613
