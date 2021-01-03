@@ -1,5 +1,5 @@
 """
-Oragnism object
+Organism object
 It allocates the full data structure
 """
 
@@ -423,35 +423,72 @@ class OrganismObject:
         
         self.set_row_to_pssm()  # !!! New
     
-    def get_placement(self, dna_sequence, print_out = False):  # !!! New
+    def get_placement(self, dna_sequence, print_out = False):
+		"""Places the organism elements (recognizers and connectors) on a sequence
+		   in an optimal way, maximizing the energy (i.e. cumulative scores) obtained.
+		   
+		   That is, it returns the best possible placement of the organism on the
+		   sequence, as a function of the cumulative organism energy.
+		   
+		   Inputs:
+		   - dna_sequence: DNA sequence to place on
+		   - print_out: bool to indicate whether to print or not the placement
+		
+		   The placement function implements a modified Needleman-Wünch algorithm.
+		   
+		   The algorithm uses a two-dimensional matrix, with the sequence on the X-axis
+		   and the PSSM columns on the Y-axis.
+		   - Substitution scores are computed as PSSM column scores.
+		   - First row is set to zeros
+		   - First column is set to -inf
+		   - Gaps are only allowed in terminal PSSM rows (last column of PSSM)
+		     - Gaps can only take place between end of PSSM (cell) and another cell in row
+		   - Gaps are scored according to the score from the connector between the two
+		     PSSMs, provided with the distance (and its internal mu and sigma)
+		   - Contiguous (diagonal) PSSM alignment invokes a zero gap using the appropriate
+		     connector
+		   - The alignment matrix is (M+1)x(N+1)
+		   - The traceback matrix (which stores info for traceback) is 2 x (M+1)x(N+1).
+		     - The extra dimension captures the two coordinates for the traceback to cell
+		   - Traceback through a gap enforces that a diagonal move must be taken next
+		     (this avoids double gaps in a row)
+		   - Traceback is initiated at the cell with the best value on the bottom row
+		"""
     
-        # Initialize the two matrices
+        # Initialize the two matrices (alignment + traceback matrices)
         
         # Number of rows
         m = self.sum_pssm_lengths()
         # Number of columns
         n = len(dna_sequence)
         
-        # Initialize matrix of scores
+        # Initialize matrix of scores (alignment matrix)
+		# Matrix is (M+1)x(N+1), with the extra "fake" row/columns
+		# Matrix is initialized to -inf, then first row set to zero
         scores_matrix = np.full((m+1, n+1), -1 * np.inf)
         scores_matrix[0,:] = 0
         
-        # Initialize matrix of pointers
+        # Initialize matrix of pointers (traceback matrix), to None
+		# Matrix is 2x(M+1)x(N+1), to store row/col of incoming cell
         pointers_matrix = np.full((2, m+1, n+1), None)
         
-        # Fill the matrices
-        for i in range(1, m + 1):        
-            
+        # Fill the matrices (top-to-bottom, then left-to-right)
+        for i in range(1, m + 1):
+			# Row fill up is done in two passes:
+			#  - First fill up with possible diagonal scores
+			#  & (for terminal recognizer rows only)
+			#  - Fill up with possible gap scores (horizontal moves)
+			
             # Diagonal scores over row i
             for j in range(1, n + 1):
-                
+                # call PSSM column score function with the DNA sequence
                 diag_score = self.get_diag_score(pointers_matrix, i, j, dna_sequence)
+				# assign cumulative score to alignment matrix
                 scores_matrix[i,j] = scores_matrix[i-1, j-1] + diag_score
                 # Annotate "where we came from" in the pointers_matrix
                 pointers_matrix[0][i,j] = i - 1  # row idx of the origin
                 pointers_matrix[1][i,j] = j - 1  # column idx of the origin
                 
-            
             # Horizontal scores over row i
             # (only in rows at the interface with the next PSSM)
             if self.is_last(i) and i != m:
@@ -460,21 +497,38 @@ class OrganismObject:
                 # the following arrays. They will be written altogether at the end of
                 # the loop over j, to avoid reading them as starting scores for other
                 # horizontal moves at a later cycles in the for loop over j
+				
+				# That is, the matrix with diagonal scores is left untouched, and used
+				# as reference for any gap evaluations. The result of such gap evaluations
+				# is placed on a temporary matrix. The best gap scores are computed there.
+				# This is to avoid adding the gap-to-gap score (instead of
+				# the diagonal score) that has replaced a diagonal score, as we move
+				# further right (because otherwise you could "carry" multiple gap
+				# scores
                 tmp_gap_scores = scores_matrix[i,:].copy()  # vector of length n+1
                 tmp_gap_pointers = pointers_matrix[:,i,:].copy()  # 2 x (n+1) matrix
                 
+				# for each column of the matrix
                 for j in range(1, n + 1):
-                    
                     # Compute all the possible values from all the possible
                     # horizontal moves (gaps) that land on [i,j]
                     for start in range(j):
-                        gap_size = j - start
+                        gap_size = j - start	# obtain distance for connector
+						# obtain PSSM index, which is also the connector index
+						# because this is the preceding PSSM
                         pssm_idx = self.row_to_pssm[i][0]
+						# evaluate the score for connector given distance
+						# the DNA sequence length (n) is needed for the connector
+						# background model
                         gap_score = self.get_gap_score(pssm_idx, gap_size, n)
+						# add cumulative score (using the score matrix, which has
+						# not been modified by horizontal scores)
                         candidate_score = scores_matrix[i, start] + gap_score
                         
+						# assess whether temp scores should be overwritten
+						# that is, whether this gap is better than other gaps
                         if candidate_score >= tmp_gap_scores[j]:
-                            # Store the score
+                            # Write horizontal score if better than existing
                             tmp_gap_scores[j] = candidate_score
                             # Annotate "where we came from" in the tmp_gap_pointers
                             tmp_gap_pointers[0,j] = i  # row idx of the origin
@@ -482,10 +536,12 @@ class OrganismObject:
                 
                 
                 # Update the original matrices
+				# tmp_gap_scores contains the updated matrix, with the diagnonal moves
+				# and any best horizontal moves replacing them if adequate
                 scores_matrix[i,:] = tmp_gap_scores
                 pointers_matrix[:,i,:] = tmp_gap_pointers
             
-        # Get best binding energy
+        # Get best binding energy (max value on bottom row)
         last_row = scores_matrix[-1,:]
         best = max(last_row)
         
@@ -493,10 +549,12 @@ class OrganismObject:
         
         # Position of best (where backtracking starts from)
         best_i = m  # it always comes from the last row by definition
-        best_j = int(np.where(last_row == best)[0])  # column of best
+        best_j = int(np.where(last_row == best)[0])  # column of best value
         
         # Traverse back the matrix from the best element in the last row
         # and store the alignment path
+		# traverse_matrix is a recursive function that will generate the path
+		# taken by the optimal alignment
         alignment_path = []
         alignment_path = self.traverse_matrix(pointers_matrix, best_i, best_j, alignment_path)
         alignment_path.reverse()  # Top-down instead of bottom-up
@@ -510,7 +568,7 @@ class OrganismObject:
         if print_out == True:
             self.print_placement(node_positions, node_scores, dna_sequence)
         
-        # Split node-scores in recognizers-scores and connectors-scores
+        # Split node-scores into recognizers-scores and connectors-scores
         node_scores = node_scores[1:]  # Remove token node
         recognizers_scores = []
         connectors_scores = []
@@ -746,7 +804,7 @@ class OrganismObject:
         
         return len(self.recognizers)
     
-    def sum_pssm_lengths(self) -> int:  # !!! New
+    def sum_pssm_lengths(self) -> int:
         """Returns the sum of the lengths of all the PSSMs of the organism.
         """
         
@@ -756,83 +814,123 @@ class OrganismObject:
         
         return sum_lengths
     
-    def get_gap_score(self, connector_idx, d, s_dna_len):  # !!! New (missing documentation)
-        
+    def get_gap_score(self, connector_idx, d, s_dna_len):
+        """Calls the appropriate connector, with the given distance and length of the DNA sequence to
+		   obtain the energy of the connector.
+		"""
         if d == s_dna_len:
             return -1 * np.inf
         
         gap_score = self.connectors[connector_idx].get_score(d, s_dna_len)
         return gap_score
     
-    def get_score_from_pssm(self, row_idx_from_placement_matrix, nucleotide):  # !!! New (missing documentation)
+    def get_score_from_pssm(self, row_idx_from_placement_matrix, nucleotide):
+		"""Calls the appropriate PSSM (and column) to obtain the score, given a nucleotide
+		"""
         pssm_index = self.row_to_pssm[row_idx_from_placement_matrix][0]
         pssm_column = self.row_to_pssm[row_idx_from_placement_matrix][1]
         pssm_object = self.recognizers[pssm_index]
         score = pssm_object.pssm[pssm_column][nucleotide]
         return score
     
-    def get_diag_score(self, pointers_mat, row_idx, col_idx, dna_sequence):  # !!! New (missing documentation)
+    def get_diag_score(self, pointers_mat, row_idx, col_idx, dna_sequence):
+		"""Evaluates and returns a substitution score (diagonal move), using
+		   get_score_from_pssm and taking into account several special cases.
+		   row_idx and col_idx identify the "destination" cell [the cell being
+		   evaluated]
+		"""
     
         diag_score = 0
         
         # Check if it is a gap of zero bp
+		# This means two PSSMs back to back, which then must incorporate a zero
+		# gap score
         if self.is_a_0_bp_gap(pointers_mat, row_idx, col_idx):
-            # Call connector
+            # Call connector, for a zero bp gap evaluation, add it to the
+			# diagonal score [connector needs to the length of the DNA seq]
             pssm_idx = self.row_to_pssm[row_idx][0]
             connector = self.connectors[pssm_idx - 1]
             zero_gap_score = connector.get_score(0, len(dna_sequence))
             diag_score += zero_gap_score
         
-        nucleotide = dna_sequence[col_idx - 1]
+		# get nucleotide and compute PSSM score for it
+        nucleotide = dna_sequence[col_idx - 1] 
         pssm_score = self.get_score_from_pssm(row_idx, nucleotide)
         diag_score += pssm_score
         
         return diag_score
     
-    def is_first(self, row_idx_from_placement_matrix):  # !!! New (missing documentation)
+    def is_first(self, row_idx_from_placement_matrix):
+		"""Returns true if we are on the first element of a PSSM recognizer
+		"""
         pssm_col = self.row_to_pssm[row_idx_from_placement_matrix][1]
         if pssm_col == 0:
             return True
         else:
             return False
     
-    def is_last(self, row_idx_from_placement_matrix):  # !!! New (missing documentation)
-        if self.is_first(row_idx_from_placement_matrix + 1):
+    def is_last(self, row_idx_from_placement_matrix): 
+		"""Returns true if we are on the last element of a PSSM recognizer
+		"""
+		# if next one is a first, then we are at a last ;-)
+		if self.is_first(row_idx_from_placement_matrix + 1):
             return True
         else:
             return False
     
-    def is_a_0_bp_gap(self, pointers_mat, row_idx, col_idx):  # !!! New (missing documentation)
-        
+    def is_a_0_bp_gap(self, pointers_mat, row_idx, col_idx):
+		"""Tells whether the cell defines a contiguous diagonal
+		   run between two PSSMs
+		"""
+
+		# if the row does not correspond to the first column of a PSSM
         if self.is_first(row_idx)==False:
             return False
         
+		# if the row IS a first column of a PSSM
+		# get row index of diagonal-up-left cell
+		# this should be the row of the cell pointing to the
+		# end of the previous PSSM
         pointer_row_idx = pointers_mat[0][row_idx-1, col_idx-1]
         
+		# the equality below, will only be true, if there was
+		# a diagonal move. this, combined with the fact that we know
+		# that this was a PSSM last row, identifies that the diagonal
+		# up-left element comes from a PSSM diagonal score
+		# (so you really have a back-to-back PSSM situation)
         if pointer_row_idx == row_idx-2:
             return True
         else:
             return False
     
-    
     def traverse_matrix(self, pointers_mat, i, j,
-                        alignment_path=[], from_gap_flag=False) -> list:  # !!! New (missing documentation)
+                        alignment_path=[], from_gap_flag=False) -> list:
+		"""Recursive function used for traceback
+		   - i and j are the starting positions
+		   - alignment_path is the path that is filled up recursively
+		   - from_gap_flag identifies the case that we got to this position from a gap
+		     and we therefore MUST go diagonal (no gap concatenation is allowed)
+		"""
         
         # End of the recursion
         if i == None:  # the top row has been reached
             return alignment_path
         
+		# add current cell coordinates to path
         alignment_path.append([i,j])
         
+		# avoid double gaps
         if from_gap_flag == True:
             # move diagonally
             i_next = i - 1
             j_next = j - 1
+	    # or move back through annotated pointer
         else:
             # move where the pointers-matrix says
             i_next = pointers_mat[0, i, j]
             j_next = pointers_mat[1, i, j]
         
+		# if moving horizontally, indicate that with flag
         if i_next == i:
             return self.traverse_matrix(pointers_mat, i_next, j_next,
                                         alignment_path, from_gap_flag=True)
@@ -840,8 +938,11 @@ class OrganismObject:
             return self.traverse_matrix(pointers_mat, i_next, j_next,
                                         alignment_path,from_gap_flag=False)
     
+	
     def get_node_positions_and_energies(self, alignment_path, scores_matrix,
-                                        pointers_matrix, dna_seq) -> list:  # !!! New (missing documentation)
+                                        pointers_matrix, dna_seq)
+	    """
+		"""
         
         # Use the path to get info about individual positions and score of all the
         # nodes of the organism
