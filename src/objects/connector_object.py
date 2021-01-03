@@ -74,8 +74,6 @@ class ConnectorObject():
         self.mutate_variance_sigma = config["MUTATE_VARIANCE_SIGMA"]
         self.mutate_variance_mu = config["MUTATE_VARIANCE_MU"]
         self.placement_options = config["PLACEMENT_OPTIONS"]
-        self.energy_threshold_method = config["ENERGY_THRESHOLD_METHOD"]
-        self.energy_threshold_value = config["ENERGY_THRESHOLD_PARAM"]
 
     # pylint: enable=R0913
     # Setters
@@ -136,6 +134,51 @@ class ConnectorObject():
             )
 
     # pylint: enable=W0613
+
+    def get_score(self, d, s_dna_len):
+        
+        
+        # Numerator                
+        numerator = norm_pdf(d, self._mu, self._sigma)
+        
+        # Normalize by AUC within the range of observable d values
+        
+        max_d = s_dna_len - 1  # Maximum d observable
+        min_d = -1 * max_d  # Minimum d observable
+        
+        if self._sigma == 0:
+            auc = 1.0  # all the gaussian is within the (-(L-1), +(L-1)) range
+        else:
+            auc = (norm_cdf(max_d, self._mu, self._sigma) -
+                   norm_cdf(min_d, self._mu, self._sigma))
+        
+        # Avoid zero-division error
+        # This will never happen, unless an organism evolves an extremely large sigma
+        if auc < 1e-100:
+            auc = 1e-100 
+            print("AUC was 0 with mu =", self._mu, "and sigma =", self._sigma)                
+        
+        # avoid log(0) error when computing e_connector
+        if numerator < 1e-100:
+            numerator = 1e-100
+        
+        # Apply normalization
+        numerator = numerator / auc
+        
+        # Denominator
+        # The denominator is p(d) according to the null model
+        # The probabity to observe d depends on the number of ways of getting d,
+        # given two randomly selected positions within a sequence of lentgth L.
+        # There are L - abs(d) ways of getting two random position at
+        # distance d within a sequence of length L.
+        # The total number of equally likely couples is L*(L-1).
+        # Therefore  p(d|null_model) = (L-abs(d)) / (L*(L-1))
+        denominator = (s_dna_len - abs(d)) / (s_dna_len * (s_dna_len-1))
+        
+        # compute additive connector energy term
+        e_connector = np.log2(numerator / denominator)
+        
+        return e_connector
 
     def print(self) -> None:
         """Prints the connector mu and sigma values

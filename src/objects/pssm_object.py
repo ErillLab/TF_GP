@@ -66,9 +66,6 @@ class PssmObject():
         self.upper_print_probability = config["UPPER_PRINT_PROBABILITY"]
         self.scan_reverse_complement = config["SCAN_REVERSE_COMPLEMENT"]
         
-        self.energy_threshold_method = config["ENERGY_THRESHOLD_METHOD"]
-        self.energy_threshold_value = config["ENERGY_THRESHOLD_PARAM"]
-        
         # Compute PSSM Matrix based on PWM
         self.recalculate_pssm()
 

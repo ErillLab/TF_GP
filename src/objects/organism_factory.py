@@ -103,6 +103,8 @@ class OrganismFactory:
         # insert last recognizer in the chain and add it to list
         new_recognizer = self.create_pssm(self.pwm_length)
         new_organism.recognizers.append(new_recognizer)
+        
+        new_organism.set_row_to_pssm()  # !!! New (missing documentation)
 
         return new_organism
     
@@ -130,7 +132,7 @@ class OrganismFactory:
         Returns:
             A pssm object with an initializated PWM
         """
-        if length == None:  # !!! I guess there's a better way. length=self.pwm_length in the input is not allowed
+        if length == None:
             length = self.pwm_length
         
         pwm = []
@@ -338,6 +340,10 @@ class OrganismFactory:
         child2.set_recognizers(child2_reco)
         child2.set_connectors(child2_conn)
         
+        # !!! New (Missing documentation)
+        child1.set_row_to_pssm()
+        child2.set_row_to_pssm()
+        
         return [child1, child2]
 
     def import_organisms(self, file_name: str) -> list:
@@ -372,8 +378,9 @@ class OrganismFactory:
             # Set recognizers and connectors of the organism
             new_organism.set_recognizers(new_org_recognizers)
             new_organism.set_connectors(new_org_connectors)
+            new_organism.set_row_to_pssm()
 
-            #if "isTracked" in organism.keys():  # !!!
+            #if "isTracked" in organism.keys():  # !!! organism tracking needs to be reimplemented with chain-organisms
             #    new_organism.set_is_tracked(organism["isTracked"])
 
             organism_list.append(new_organism)
