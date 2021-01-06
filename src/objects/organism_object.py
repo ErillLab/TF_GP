@@ -424,7 +424,7 @@ class OrganismObject:
         self.set_row_to_pssm()  # !!! New
     
     def get_placement(self, dna_sequence, print_out = False):
-		"""Places the organism elements (recognizers and connectors) on a sequence
+        """Places the organism elements (recognizers and connectors) on a sequence
 		   in an optimal way, maximizing the energy (i.e. cumulative scores) obtained.
 		   
 		   That is, it returns the best possible placement of the organism on the
@@ -825,7 +825,7 @@ class OrganismObject:
         return gap_score
     
     def get_score_from_pssm(self, row_idx_from_placement_matrix, nucleotide):
-		"""Calls the appropriate PSSM (and column) to obtain the score, given a nucleotide
+        """Calls the appropriate PSSM (and column) to obtain the score, given a nucleotide
 		"""
         pssm_index = self.row_to_pssm[row_idx_from_placement_matrix][0]
         pssm_column = self.row_to_pssm[row_idx_from_placement_matrix][1]
@@ -834,7 +834,7 @@ class OrganismObject:
         return score
     
     def get_diag_score(self, pointers_mat, row_idx, col_idx, dna_sequence):
-		"""Evaluates and returns a substitution score (diagonal move), using
+        """Evaluates and returns a substitution score (diagonal move), using
 		   get_score_from_pssm and taking into account several special cases.
 		   row_idx and col_idx identify the "destination" cell [the cell being
 		   evaluated]
@@ -861,7 +861,7 @@ class OrganismObject:
         return diag_score
     
     def is_first(self, row_idx_from_placement_matrix):
-		"""Returns true if we are on the first element of a PSSM recognizer
+        """Returns true if we are on the first element of a PSSM recognizer
 		"""
         pssm_col = self.row_to_pssm[row_idx_from_placement_matrix][1]
         if pssm_col == 0:
@@ -870,16 +870,16 @@ class OrganismObject:
             return False
     
     def is_last(self, row_idx_from_placement_matrix): 
-		"""Returns true if we are on the last element of a PSSM recognizer
+        """Returns true if we are on the last element of a PSSM recognizer
 		"""
 		# if next one is a first, then we are at a last ;-)
-		if self.is_first(row_idx_from_placement_matrix + 1):
+        if self.is_first(row_idx_from_placement_matrix + 1):
             return True
         else:
             return False
     
     def is_a_0_bp_gap(self, pointers_mat, row_idx, col_idx):
-		"""Tells whether the cell defines a contiguous diagonal
+        """Tells whether the cell defines a contiguous diagonal
 		   run between two PSSMs
 		"""
 
@@ -905,7 +905,7 @@ class OrganismObject:
     
     def traverse_matrix(self, pointers_mat, i, j,
                         alignment_path=[], from_gap_flag=False) -> list:
-		"""Recursive function used for traceback
+        """Recursive function used for traceback
 		   - i and j are the starting positions
 		   - alignment_path is the path that is filled up recursively
 		   - from_gap_flag identifies the case that we got to this position from a gap
@@ -937,11 +937,11 @@ class OrganismObject:
         else:
             return self.traverse_matrix(pointers_mat, i_next, j_next,
                                         alignment_path,from_gap_flag=False)
+
     
-	
     def get_node_positions_and_energies(self, alignment_path, scores_matrix,
-                                        pointers_matrix, dna_seq)
-	    """
+                                        pointers_matrix, dna_seq) -> list:
+        """Description here
 		"""
         
         # Use the path to get info about individual positions and score of all the
