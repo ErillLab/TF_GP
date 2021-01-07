@@ -47,10 +47,15 @@ organism_factory = OrganismFactory(
 example_dna_seq = "AGAAGGAATGACCCAGGCCGGGCACGATACTAAACACAAAAAGACAAAGCAATATGCACTGGTAACAGCAAGTGTACGTAACACGTCAACCCAATTAAGCGACCGAAATCGTAAATTCTGATAGAGTCTATGGTGGAGGCATATCCAAGATCTAACCAATATACCACAAGCAGAGTCAGATTAATGTTCCGAACGGAAGA"
 example_dna_seq = example_dna_seq.lower()
 
+example_dna_seq2 = "AGAAGGAATGACCCTTGTCTTGGCACGATACTAAACACAAAAAGACAAAGCAATATGCACTGGTAACAGCAAGTGTACGTAACACGTCAACCCAATTAAGCGACCGAAATCGTAAATTCTGATAGAGTCTATGGTGGAGGCATATCCAAGATCTAACCAATATACCACAAGCAGAGTCAGATTAATGTTCCGAACGGAAGA"
+example_dna_seq2 = example_dna_seq2.lower()
+
+example_dna_seq3 = "AGAAGGAATGACCCTTGCTTGGCACGATACTAAACACAAAAAGACAAAGCAATATGCACTGGTAACAGCAAGTGTACGTAACACGTCAACCCAATTAAGCGACCGAAATCGTAAATTCTGATAGAGTCTATGGTGGAGGCATATCCAAGATCTAACCAATATACCACAAGCAGAGTCAGATTAATGTTCCGAACGGAAGA"
+example_dna_seq3 = example_dna_seq3.lower()
 
 # Import example organisms
 org_list = organism_factory.import_organisms("example_organisms.json")
-org_3_nodes, org_5_nodes, org_9_nodes = org_list
+org_3_nodes, org_3_nodes2, org_5_nodes, org_9_nodes = org_list
 print("\n")
 org_3_nodes.print()
 print("\n")
@@ -64,11 +69,16 @@ new_example_organism.print()
 
 # Chose the organism to use as example in the demo
 example_organism = org_3_nodes
+example_organism2 = org_3_nodes2
 
 
 # Get best placement
-results = example_organism.get_placement(example_dna_seq)
+#results = example_organism.get_placement(example_dna_seq)
 results = example_organism.get_placement(example_dna_seq, print_out = True)
+
+results = example_organism2.get_placement(example_dna_seq2, print_out = True)
+
+results = example_organism2.get_placement(example_dna_seq3, print_out = True)
 
 results["energy"]
 results["recognizers_scores"]
@@ -78,7 +88,7 @@ results["connectors_scores"]
 
 
 
-
+"""
 
 
 # WALK THROUGH THE CODE OF get_placement --------------------------------------
@@ -185,7 +195,7 @@ output_dict = {"energy": best,
     
 
 
-
+"""
 
 
 
