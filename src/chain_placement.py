@@ -62,8 +62,15 @@ org_9_nodes.print()
 new_example_organism = organism_factory.get_organism()
 new_example_organism.print()
 
+
+# Import org_for_bug_fix
+org_for_bug_fix = organism_factory.import_organisms("fix_bug_org.json")
+
+
 # Chose the organism to use as example in the demo
-example_organism = org_3_nodes
+example_organism = org_for_bug_fix[0]
+example_organism.print()
+
 
 
 # Get best placement
@@ -76,8 +83,7 @@ results["connectors_scores"]
 
 
 
-
-
+#organism_factory.export_organisms([example_organism], "fix_bug_org.json")
 
 
 
@@ -99,7 +105,7 @@ scores_matrix[0,:] = 0
 pointers_matrix = np.full((2, m+1, n+1), None)
 
 # Fill the matrices
-for i in range(1, m + 1):        
+for i in range(1, m + 1):
     
     # Diagonal scores over row i
     for j in range(1, n + 1):
@@ -161,12 +167,12 @@ alignment_path = example_organism.traverse_matrix(pointers_matrix, best_i, best_
 alignment_path.reverse()  # Top-down instead of bottom-up
 
 # Get scores and positions of all the nodes of the organism
-node_scores, node_positions = example_organism.get_node_positions_and_energies(
+node_scores, node_positions, cols_of_0_gaps = example_organism.get_node_positions_and_energies(
     alignment_path, scores_matrix, pointers_matrix, example_dna_seq
 )
-    
+
 # Print placement
-example_organism.print_placement(node_positions, node_scores, example_dna_seq)
+example_organism.print_placement(node_positions, node_scores, cols_of_0_gaps, example_dna_seq)
 
 # Split node-scores in recognizers-scores and connectors-scores
 node_scores = node_scores[1:]  # Remove token node

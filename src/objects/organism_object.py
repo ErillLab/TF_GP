@@ -560,13 +560,14 @@ class OrganismObject:
         alignment_path.reverse()  # Top-down instead of bottom-up
         
         # Get scores and positions of all the nodes of the organism
-        node_scores, node_positions = self.get_node_positions_and_energies(
+        node_scores, node_positions, cols_of_0_gaps = self.get_node_positions_and_energies(
             alignment_path, scores_matrix, pointers_matrix, dna_sequence
         )
         
         # Print placement
         if print_out == True:
-            self.print_placement(node_positions, node_scores, dna_sequence)
+            self.print_placement(node_positions, node_scores,
+                                 cols_of_0_gaps, dna_sequence)
         
         # Split node-scores into recognizers-scores and connectors-scores
         node_scores = node_scores[1:]  # Remove token node
@@ -951,6 +952,7 @@ class OrganismObject:
         previous_score = 0
         node_placements_right_ends = []
         previous_element = [None, None]
+        columns_of_0_bp_gaps = []
         
         for element in alignment_path:
             row, column = element
@@ -982,9 +984,14 @@ class OrganismObject:
             # connector score)
             if self.is_a_0_bp_gap(pointers_matrix, row, column):
                 
-                pssm_contribution = self.get_diag_score(
-                    pointers_matrix, row, column, dna_seq
-                )
+                
+                #pssm_contribution = self.get_diag_score(
+                #    pointers_matrix, row, column, dna_seq
+                #)
+                                
+                nucleotide = dna_seq[column - 1] 
+                pssm_contribution = self.get_score_from_pssm(row, nucleotide)
+                
                 
                 cell_score = scores_matrix[row, column]
                 # Remove the pssm contribution, so that the cumulative score
@@ -996,14 +1003,17 @@ class OrganismObject:
                 previous_score = cumulative_score
                 
                 node_placements_right_ends.append(column)
+                
+                columns_of_0_bp_gaps.append(column)
             
             
             previous_element = [row, column]
             
         
-        return [node_scores, node_placements_right_ends]
+        return [node_scores, node_placements_right_ends, columns_of_0_bp_gaps]
     
-    def print_placement(self, node_right_ends, node_scores, dna_seq):  # !!! New (missing documentation)
+    def print_placement(self, node_right_ends, node_scores,
+                        cols_of_0_gaps, dna_seq):  # !!! New (missing documentation)
         
         n = len(dna_seq)
         dashed_line = ["-"] * n
@@ -1020,6 +1030,10 @@ class OrganismObject:
             
             if i % 2 == 0:
                 
+                # Detect a post 0-bp gap recognizer
+                if start in cols_of_0_gaps:
+                    start -= 1
+                
                 # write recognizer placement
                 for pos in range(start, stop):
                     dashed_line[pos] = str(i)
@@ -1030,11 +1044,17 @@ class OrganismObject:
                         dotted_line_1[start + c] = node_score_str[c]
             
             else:
-                # if the gap is large, the connector score is written in the middle
+                
                 gap_size = stop - start
+                
+                # if the gap is large, the connector score is written in the middle
                 if gap_size > len(node_score_str) + 1:
                     right_shift = int(np.ceil((gap_size - len(node_score_str))/2))
                     start += right_shift
+                
+                # More centered printing for small gaps
+                else:
+                    start -= 2
                 
                 # write connector score
                 for c in range(len(node_score_str)):
