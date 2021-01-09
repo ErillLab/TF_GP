@@ -9,7 +9,7 @@ import numpy as np
 
 def gini_RSV(values_for_each_class):
     '''
-    Gini coefficient, modified in order to be alble to deal with negative
+    Gini coefficient, modified in order to be able to deal with negative
     values as in "Inequality measures and the issue of negative incomes"
     (Raffinetti, Siletti, Vernizzi)
 
@@ -120,9 +120,6 @@ class OrganismObject:
         self.min_nodes = conf["MIN_NODES"]
         self.max_nodes = conf["MAX_NODES"]
 	
-        # determines whether organism is tracked through evolution
-        self.is_tracked = False
-
         # maximum length of PSSMs allowed
         self.max_pssm_length = max_pssm_length
         
@@ -130,18 +127,7 @@ class OrganismObject:
         # The list maps each row of the matrix of the placement scores onto a
         # column of a PSSM: each row is assigned a [pssm_idx, column_idx]
         self.row_to_pssm = []  # !!! New
-
-
-    # Setters and getters
-    def set_is_tracked(self, new_tracked: bool):
-        """Setter is_tracked
-
-        Args:
-            new_tracked: True if the organism should be tracked.
-                         False otherwise.
-        """
-        self.is_tracked = new_tracked
-    
+ 
     
     def set_row_to_pssm(self):  # !!! New (Missing documentation)
         
@@ -423,7 +409,8 @@ class OrganismObject:
         
         self.set_row_to_pssm()  # !!! New
     
-    def get_placement(self, dna_sequence, print_out = False):
+    def get_placement(self, dna_sequence, traceback=False, 
+                      print_out = False, out_file = None) -> dict:
         """Places the organism elements (recognizers and connectors) on a sequence
 		   in an optimal way, maximizing the energy (i.e. cumulative scores) obtained.
 		   
@@ -433,6 +420,7 @@ class OrganismObject:
 		   Inputs:
 		   - dna_sequence: DNA sequence to place on
 		   - print_out: bool to indicate whether to print or not the placement
+           - out_file: file name to write placement to, if desired
 		
 		   The placement function implements a modified Needleman-Wünch algorithm.
 		   
@@ -546,39 +534,50 @@ class OrganismObject:
         best = max(last_row)
         
         # BACKTRACKING
-        
-        # Position of best (where backtracking starts from)
-        best_i = m  # it always comes from the last row by definition
-        best_j = int(np.where(last_row == best)[0])  # column of best value
-        
-        # Traverse back the matrix from the best element in the last row
-        # and store the alignment path
-		# traverse_matrix is a recursive function that will generate the path
-		# taken by the optimal alignment
-        alignment_path = []
-        alignment_path = self.traverse_matrix(pointers_matrix, best_i, best_j, alignment_path)
-        alignment_path.reverse()  # Top-down instead of bottom-up
-        
-        # Get scores and positions of all the nodes of the organism
-        node_scores, node_positions, cols_of_0_gaps = self.get_node_positions_and_energies(
-            alignment_path, scores_matrix, pointers_matrix, dna_sequence
-        )
-        
-        # Print placement
-        if print_out == True:
-            self.print_placement(node_positions, node_scores,
-                                 cols_of_0_gaps, dna_sequence)
-        
-        # Split node-scores into recognizers-scores and connectors-scores
-        node_scores = node_scores[1:]  # Remove token node
-        recognizers_scores = []
-        connectors_scores = []
-        for i in range(len(node_scores)):
-            if i % 2 == 0:
-                recognizers_scores.append(node_scores[i])
-            else:
-                connectors_scores.append(node_scores[i])
-        
+        if traceback or print_out or out_file != None:
+            # Position of best (where backtracking starts from)
+            best_i = m  # it always comes from the last row by definition
+            best_j = int(np.where(last_row == best)[0])  # column of best value
+            
+            # Traverse back the matrix from the best element in the last row
+            # and store the alignment path
+    		# traverse_matrix is a recursive function that will generate the path
+    		# taken by the optimal alignment
+            alignment_path = []
+            alignment_path = self.traverse_matrix(pointers_matrix, best_i, best_j, alignment_path)
+            alignment_path.reverse()  # Top-down instead of bottom-up
+            
+            # Get scores and positions of all the nodes of the organism
+            node_scores, node_positions, cols_of_0_gaps = self.get_node_positions_and_energies(
+                alignment_path, scores_matrix, pointers_matrix, dna_sequence
+            )
+            
+            # Print placement
+            if print_out == True:
+                self.print_placement(node_positions, node_scores,
+                                     cols_of_0_gaps, dna_sequence, 
+                                     print_out=True)
+            # Print to file
+            if out_file != None:
+                self.print_placement(node_positions, node_scores,
+                                     cols_of_0_gaps, dna_sequence, 
+                                     print_out=False, out_file=out_file)
+
+            # Split node-scores into recognizers-scores and connectors-scores
+            node_scores = node_scores[1:]  # Remove token node
+            recognizers_scores = []
+            connectors_scores = []
+            for i in range(len(node_scores)):
+                if i % 2 == 0:
+                    recognizers_scores.append(node_scores[i])
+                else:
+                    connectors_scores.append(node_scores[i])
+        # if no backtracking, return empty lists for recognizer_scores and
+        # connector_scores
+        else:
+            recognizers_scores = []
+            connectors_scores = []            
+            
         # Return output dictionary
         output_dict = {"energy": best,
                        "recognizers_scores": recognizers_scores,
@@ -586,7 +585,7 @@ class OrganismObject:
         
         return output_dict
 
-    def get_seq_fitness(self, s_dna: str) -> dict:
+    def get_seq_fitness(self, s_dna: str, traceback=False, print_out = False) -> dict:
         """Return the fitness of the organism for a given DNA sequence
 
         Args:
@@ -599,80 +598,25 @@ class OrganismObject:
             This function implements the placement behavior for organism.
             The placement problem is defined as who to best position an
             organism on a sequence (i.e. how to maximize its fitness given
-            the sequence).
-            The implementation in this function follows the recursive 
-            formulation of the organism, calling on the organisms root node
-            "get_placement" function in order obtain the list of best possible
-            placements for the organism. The best placement is chosen.
-            
-            If the root organism returns an empty list, because the placement
-            procedure has been unable to identify a non-conflicting placement,
-            the function sets the energy to a large negative value.
-            
-            The overall placement strategy, implemented via the recursive 
-            calling to the get_placement function of connectors and PSSMs is 
-            as follows:
-                
-                - PSSMs evaluate the sequence and return a list of candidate
-                  placements, with a list of blocked positions for those 
-                  placemenets
-                - PSSMs connectors receive list of candidate positions for 
-                  PSSMs, determine all viable (non-conflicting) combinations,
-                  rank them taking into account their energy, and return them
-                - General connectors receive list of candidate positions for 
-                  lower connectors, determine viable combinations, rank them 
-                  and return them
-            
-            Notes on the placement implementation:
-                - This is a greedy placement strategy, in the sense that a 
-                  connector only "sees" its subtree, so sister connectors
-                  may independently choose placement options with conflicting
-                  PSSM placements. The placement option number for connectors
-                  hence plays a crucial role in determining whether the 
-                  organism will be capable of identifying a correct placement.
-                  This problem will be more severe as the depth of the organism
-                  grows.
         """
-
-        # Compute the number of nodes for automatic placement
-        num_pssm = (self.count_nodes() - 1) / 2 + 1
-
-        automatic_placement_options = int((self.max_pssm_length + 1) * num_pssm)
+        #invoke placement function
+        placed_org=self.get_placement(s_dna, traceback, print_out)
         
         # Set energy threshold method and value
         E_threshold_method = self.energy_threshold_method
         E_threshold_value = self.energy_threshold_value
-
-        # call recursively to get the list of best placement options for 
-        # the organism (root node)
-        node_root = self.root_node.get_placement(
-            s_dna,
-            len(s_dna),
-            automatic_placement_options,
-            self.is_automatic_placement_options
-                )
-
-        # handle the case in which no viable placement options have been
-        # identified
-        if len(node_root) < 1:
-            print("Too few placement options")
-            return {
-                "energy": -1000,
-                "position": 0,
-                "lock_vector": [],
-                "recognizers_scores": []
-                }
-
+        
         # Apply lower bound to energy if required
         if E_threshold_method == "organism":
-            if node_root[0]["energy"] < E_threshold_value:
-                node_root[0]["energy"] = E_threshold_value
+            if placed_org["energy"] < E_threshold_value:
+                placed_org["energy"] = E_threshold_value
         
         # return score, blocks and blokcers and PSSMs scores in that sequence
-        return node_root[0]
+        return placed_org
     
     
-    def get_additive_fitness(self, a_dna: list) -> float:
+    def get_additive_fitness(self, a_dna: list, traceback=False, 
+                             print_out = False, use_gini=False) -> float:
         """Return the total Fitness for an array of DNA sequences and the
            chosen fitness method
 
@@ -688,15 +632,20 @@ class OrganismObject:
         ginis = []
 		# for each sequence in the provided sequence set
         for s_dna in a_dna:
-			# get the energy and pssm scores
-            sfit = self.get_seq_fitness(s_dna)
+            #do traceback only if Gini is requested
+            if use_gini:
+    			# get the energy and pssm scores
+                sfit = self.get_seq_fitness(s_dna, traceback=True)
+            else:
+                sfit = self.get_seq_fitness(s_dna)
             energy = sfit["energy"]  # energy
             pssm_scores = sfit["recognizers_scores"]  # PSSMs scores
-            
-			# compute and append the Gini coefficient
-            if len(pssm_scores) > 0:
-                gini = gini_RSV(pssm_scores)  # Gini coefficient
-                ginis.append(gini)
+
+            if use_gini:
+    			# compute and append the Gini coefficient
+                if len(pssm_scores) > 0:
+                    gini = gini_RSV(pssm_scores)  # Gini coefficient
+                    ginis.append(gini)            
 			
 			# append energy
             scores.append(energy)
@@ -710,15 +659,16 @@ class OrganismObject:
             score = np.mean(scores)
         
         # Compute the average Gini coefficient as the geometric mean
-        if len(ginis) == 0:  # Case where no placement was available for any sequence
-            avg_gini = 1  # maximum penalty is arbitrarily assigned
+        if len(ginis) == 0:  # Case where no gini is requested
+            avg_gini = 0  # minimum penalty is arbitrarily assigned
         else:
             avg_gini = np.prod(ginis) ** (1/len(ginis))  # geometric mean
         
         return {"score": score, "avg_gini": avg_gini}
 
     def get_boltz_fitness(self, pos_dataset: list, neg_dataset: list,
-                          genome_length: int) -> float:
+                          genome_length: int, traceback=False, 
+                          print_out = False, use_gini=False) -> float:
         """Returns the organism's fitness, defined as the probability that the regulator binds a
         positive sequence. All the binding energies are turned into probabilities according to a
         Boltzmannian distribution. The probability of binding a particular sequence, given the binding
@@ -738,26 +688,33 @@ class OrganismObject:
             fitness assigned to the organism
         """
         
-        # Values onthe positive set
+        # Values on the positive set
         pos_values = []
         ginis = []
         for s_dna in pos_dataset:
-            sfit = self.get_seq_fitness(s_dna)
+            #do traceback only if Gini is requested
+            if use_gini:
+    			# get the energy and pssm scores
+                sfit = self.get_seq_fitness(s_dna, traceback=True)
+            else:      
+                sfit = self.get_seq_fitness(s_dna)
             boltz_exp = np.e**sfit["energy"]  # exp(energy)
             pssm_scores = sfit["recognizers_scores"]  # PSSMs scores
-            if len(pssm_scores) > 0:
-                gini = gini_RSV(pssm_scores)  # Gini coefficient
-                ginis.append(gini)
+            if use_gini:
+    			# compute and append the Gini coefficient
+                if len(pssm_scores) > 0:
+                    gini = gini_RSV(pssm_scores)  # Gini coefficient
+                    ginis.append(gini)
 
             pos_values.append(boltz_exp)
         
         # Compute the average Gini coefficient as the geometric mean
-        if len(ginis) == 0:  # Case where no placement was available for any sequence
-            avg_gini = 1  # maximum penalty is arbitrarily assigned
+        if len(ginis) == 0:  # Case where no Gini was requested
+            avg_gini = 0  # minimum penalty is arbitrarily assigned
         else:
             avg_gini = np.prod(ginis) ** (1/len(ginis))  # geometric mean
         
-        # Values onthe negative set
+        # Values on the negative set
         neg_values = []
         neg_lengths = []
         for s_dna in neg_dataset:
@@ -1013,7 +970,8 @@ class OrganismObject:
         return [node_scores, node_placements_right_ends, columns_of_0_bp_gaps]
     
     def print_placement(self, node_right_ends, node_scores,
-                        cols_of_0_gaps, dna_seq):  # !!! New (missing documentation)
+                        cols_of_0_gaps, dna_seq, 
+                        print_out = True, out_file = None):  # !!! New (missing documentation)
         
         n = len(dna_seq)
         dashed_line = ["-"] * n
@@ -1061,10 +1019,19 @@ class OrganismObject:
                     if start + c < len(dotted_line_1):  # avoid goin out of the seq
                         dotted_line_2[start + c] = node_score_str[c]
         
-        print(dna_seq)
-        print("".join(dashed_line))
-        print("".join(dotted_line_1))
-        print("".join(dotted_line_2))
+        if print_out:
+            print(dna_seq)
+            print("".join(dashed_line))
+            print("".join(dotted_line_1))
+            print("".join(dotted_line_2))
+        
+        if out_file != None:
+            with open(out_file, "w") as ofile:
+                print(dna_seq, file=ofile)
+                print("".join(dashed_line), file=ofile)
+                print("".join(dotted_line_1), file=ofile)
+                print("".join(dotted_line_2), file=ofile)
+                
     
     def get_random_connector(self) -> int:
         """Returns the index of a random connector of the organism
@@ -1175,7 +1142,8 @@ class OrganismObject:
         organism_file.close()
 
     def export_results(self, a_dna: list, filename: str) -> None:
-        """Exports all DNA sequences organism binding to a file
+        """Exports the binding profile of the organism against each of the 
+           DNA sequences provided as a list
 
         Args:
             filename: Name of the file to export sequences
@@ -1187,39 +1155,14 @@ class OrganismObject:
         # sorting is done by sequence, so first sequences start with "AAA.."
         a_dna.sort()
 
-        results_file = open(filename, "w+")
 
         # for every DNA sequence
         for s_dna in a_dna:
+            # call fitness evaluation for sequence with file printing option
+            sfit = self.get_placement(s_dna.lower(), traceback=True,
+                                      print_out = False, out_file = filename)
 
-            # call fitness evaluation for sequence
-            sfit = self.get_seq_fitness(s_dna.lower())
 
-            # write out the sequence
-            results_file.write("\n{}\n".format(s_dna))
-
-            # create an empy positions map
-            map_positions = "-" * len(s_dna)
-
-            # positions for PSSMs are in blocks and blocked lists, returned by
-            # getSeqFitness. we zip them and then iterate over the zip to
-            # print the PSSMs in their locations respective to the sequence
-            positions = sfit["lock_vector"]
-            for pssm in positions:
-                # print _id, capped to the length of PSSM
-                _p = round(pssm["position"])
-                pssm_str = (str(pssm["id"]) * pssm["length"])[:pssm["length"]]
-
-                # fill up map at correct positions
-                map_positions = (
-                    map_positions[:_p] + pssm_str + map_positions[_p + pssm["length"]:]
-                )
-
-            # write map to file for this sequence
-            results_file.write(map_positions + "\n")
-            # resultsFile.write(str(stuff) + "\n")
-
-        results_file.close()
 
     def print_result(self, s_dna: str) -> str:
         """Prints the results of s_dna binding sites to stdout

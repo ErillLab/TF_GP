@@ -1,0 +1,4 @@
+***** Organism 1 *****
+Ccta
+ m: 34 s: 8
+gtTa

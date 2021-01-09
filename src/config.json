@@ -8,7 +8,7 @@
     "RESULT_TEST_BASE_PATH_DIR": "resultsTEST/",
     "POSITIVE_FILENAME":"positive_dataset2.fas",
     "NEGATIVE_FILENAME":"negative_dataset_5000.fas",
-    "INPUT_FILENAME":"2020-12-01--12-25-43_26626_organism.json",
+    "INPUT_FILENAME":"example_organisms.json",
     "OUTPUT_FILENAME":"output.txt",
     "MAX_SEQUENCES_TO_FIT_POS":50,
     "MAX_SEQUENCES_TO_FIT_NEG":50,
@@ -34,9 +34,7 @@
     "MUTATE_PROBABILITY_INSERT_RECOGNIZER":1,
     "MUTATE_PROBABILITY_SUBSTITUTE_PSSM":0,
     "MIN_NODES":0,
-    "MAX_NODES":5,
-    "AUTOMATIC_PLACEMENT_OPTIONS": true
-
+    "MAX_NODES":5
   },
   "organismFactory": {
     "NUM_RECOGNIZERS_LAMBDA_PARAM":4,
