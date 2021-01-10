@@ -684,7 +684,7 @@ class OrganismObject:
         Args:
             pos_dataset: list of dna sequences in the positive dataset
             neg_dataset: list of dna sequences in the negative dataset
-	    genome_length: integer representing the length of the genome
+            genome_length: integer representing the length of the genome
 
         Returns:
             fitness assigned to the organism
