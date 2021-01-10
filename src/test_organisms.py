@@ -71,11 +71,11 @@ def main():
         # Discriminative fitness
         P = org.get_additive_fitness(positive_dataset[:max_sequences_to_fit_pos],
                                      traceback=False, print_out = False, 
-                                     use_gini=True)["score"]
+                                     use_gini=False)["score"]
         
         N = org.get_additive_fitness(negative_dataset[:max_sequences_to_fit_neg],
                                      traceback=False, print_out = False, 
-                                     use_gini=True)["score"]
+                                     use_gini=False)["score"]
         
         discr_fitness =  P - N
         print("Additive --- %s seconds ---" % (time.time() - start_time))
