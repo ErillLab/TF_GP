@@ -53,7 +53,7 @@ def main():
         performance1 = org.get_boltz_fitness(positive_dataset[:max_sequences_to_fit_pos],
                                              negative_dataset[:max_sequences_to_fit_neg],
                                              genome_length, traceback=True, 
-                                             print_out = True, use_gini=True)
+                                             print_out = False, use_gini=True)
         boltz_fitness = performance1["score"]
         
         # Gini coefficient
@@ -61,11 +61,11 @@ def main():
         
         # Discriminative fitness
         P = org.get_additive_fitness(positive_dataset[:max_sequences_to_fit_pos],
-                                     traceback=True, print_out = True, 
+                                     traceback=False, print_out = False, 
                                      use_gini=True)["score"]
         
         N = org.get_additive_fitness(negative_dataset[:max_sequences_to_fit_neg],
-                                     traceback=True, print_out = True, 
+                                     traceback=False, print_out = False, 
                                      use_gini=True)["score"]
         
         discr_fitness =  P - N

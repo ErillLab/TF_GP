@@ -537,7 +537,7 @@ class OrganismObject:
         if traceback or print_out or out_file != None:
             # Position of best (where backtracking starts from)
             best_i = m  # it always comes from the last row by definition
-            best_j = int(np.where(last_row == best)[0])  # column of best value
+            best_j = int(np.where(last_row == best)[0][0])  # column of best value
             
             # Traverse back the matrix from the best element in the last row
             # and store the alignment path
