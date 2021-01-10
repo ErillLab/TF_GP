@@ -420,7 +420,7 @@ class OrganismObject:
 		   Inputs:
 		   - dna_sequence: DNA sequence to place on
 		   - print_out: bool to indicate whether to print or not the placement
-           - out_file: file name to write placement to, if desired
+           - out_file: file handle to write placement to, if desired
 		
 		   The placement function implements a modified Needleman-Wünch algorithm.
 		   
@@ -537,6 +537,8 @@ class OrganismObject:
         if traceback or print_out or out_file != None:
             # Position of best (where backtracking starts from)
             best_i = m  # it always comes from the last row by definition
+            # if multiple positions in last row have best value, pick first
+            # to initiate traceback
             best_j = int(np.where(last_row == best)[0][0])  # column of best value
             
             # Traverse back the matrix from the best element in the last row
@@ -1026,11 +1028,10 @@ class OrganismObject:
             print("".join(dotted_line_2))
         
         if out_file != None:
-            with open(out_file, "w") as ofile:
-                print(dna_seq, file=ofile)
-                print("".join(dashed_line), file=ofile)
-                print("".join(dotted_line_1), file=ofile)
-                print("".join(dotted_line_2), file=ofile)
+                print(dna_seq, file=out_file)
+                print("".join(dashed_line), file=out_file)
+                print("".join(dotted_line_1), file=out_file)
+                print("".join(dotted_line_2), file=out_file)
                 
     
     def get_random_connector(self) -> int:
@@ -1155,18 +1156,19 @@ class OrganismObject:
         # sorting is done by sequence, so first sequences start with "AAA.."
         a_dna.sort()
 
-
+        ofile = open(filename, "w")
         # for every DNA sequence
         for s_dna in a_dna:
             # call fitness evaluation for sequence with file printing option
             sfit = self.get_placement(s_dna.lower(), traceback=True,
-                                      print_out = False, out_file = filename)
+                                      print_out = False, out_file = ofile)
+        ofile.close()
 
 
-
-    def print_result(self, s_dna: str) -> str:
-        """Prints the results of s_dna binding sites to stdout
-
+    def print_result(self, s_dna: str) -> None:
+        """Prints the binding profile of the organism against the 
+           provided DNA sequence 
+           
         Args:
             s_dna: DNA sequence to export
 
@@ -1177,25 +1179,5 @@ class OrganismObject:
         s_dna = s_dna.lower()
 
         # call fitness evaluation for sequence
-        sfit = self.get_seq_fitness(s_dna.lower())
-
-        # create an empy positions map
-        map_positions = "-" * len(s_dna)
-        
-        # positions for PSSMs are in blocked and blocked lists, returned by
-        # getSeqFitness. we zip them and then iterate over the zip to
-        # print the PSSMs in their locations respective to the sequence
-        positions = sfit["lock_vector"]
-        for pssm in positions:
-            # print _id, capped to the length of PSSM
-            _p = round(pssm["position"])
-            pssm_str = (str(pssm["id"]) * pssm["length"])[:pssm["length"]]
-
-            # fill up map at correct positions
-            map_positions = (
-                map_positions[:_p] + pssm_str + map_positions[_p + pssm["length"]:]
-            )
-            # handle two-digit positions, by alterning between digits
-
-        # return map for this sequence
-        return "{}\n{}".format(s_dna, map_positions)
+        sfit = self.get_placement(s_dna.lower(), traceback=True,
+                                  print_out = True)

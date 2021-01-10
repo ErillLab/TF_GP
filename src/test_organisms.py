@@ -7,6 +7,8 @@ from objects.organism_factory import OrganismFactory
 import json
 import numpy as np
 
+import time
+
 CONFIG_FILE = "config.json"
 
 def main():
@@ -44,8 +46,12 @@ def main():
     # create organisms in input file
     a_organisms = organism_factory.import_organisms(input_organisms_path)
 
+
+
     
     for org in a_organisms:
+        
+        start_time = time.time()
 
         nodes = org.count_nodes()
         
@@ -59,6 +65,9 @@ def main():
         # Gini coefficient
         gini_coeff = performance1["avg_gini"]
         
+        print("Boltzmann --- %s seconds ---" % (time.time() - start_time))
+        
+        start_time = time.time()
         # Discriminative fitness
         P = org.get_additive_fitness(positive_dataset[:max_sequences_to_fit_pos],
                                      traceback=False, print_out = False, 
@@ -69,7 +78,7 @@ def main():
                                      use_gini=True)["score"]
         
         discr_fitness =  P - N
-        
+        print("Additive --- %s seconds ---" % (time.time() - start_time))
         
         print(
             (

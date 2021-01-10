@@ -1,0 +1,6 @@
+***** Organism 2 *****
+CTGt
+ m: 8 s: 0
+aCAG
+ m: 56 s: 12
+gCCc
