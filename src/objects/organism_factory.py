@@ -206,7 +206,9 @@ class OrganismFactory:
            Inputs:
            - parent1, parent2 - two parent organisms
            Returns:
-           - child1, child2 - two children organisms
+               A dictionary with 2 children:
+               "child1": child derived from organism1
+               "child2": child derived from organism1
            
            For recombination, organisms are split at a connector.
            Four recombination possibilities are then allowed, depending
@@ -265,13 +267,17 @@ class OrganismFactory:
              This results in the following offspring:
              - organism L2-R1
              - organism L1-R2
+             
+        The function also computes, for each possible case, the "closest" 
+        parent, which will be associated to the child for recombination, based
+        on the fraction of parent that is assigned to the child.
         """
         
         # Select one connector in each parent for the split
         index_1 = parent1.get_random_connector()
         index_2 = parent2.get_random_connector()
         
-        # Instantiate children nodes
+       # Instantiate children nodes
         child1 = OrganismObject(self.get_id(), self.conf_org, self.conf_pssm["MAX_COLUMNS"])
         child2 = OrganismObject(self.get_id(), self.conf_org, self.conf_pssm["MAX_COLUMNS"])
         
@@ -280,7 +286,7 @@ class OrganismFactory:
             # First parent keeps the broken connector in the LEFT chunk
             L1, R1 = parent1.break_chain(index_1, "left")
 
-            if random.random() < 0.5:
+           if random.random() < 0.5:
                 # Second parent keeps the broken connector in the LEFT chunk
                 L2, R2 = parent2.break_chain(index_2, "left")
             
@@ -288,10 +294,25 @@ class OrganismFactory:
                 # Child 1 is (L1 + R2)
                 child1_reco = L1["recognizers"] + R2["recognizers"]
                 child1_conn = L1["connectors"] + R2["connectors"]
+    
+                # determine similarity of children to parents, based on 
+                # fraction of parent asigned to child
+                child1_prnt1_fraction = len(L1["recognizers"]) /
+                                          float(parent1.count_recognizers())
+                child1_prnt2_fraction = len(R2["recognizers"]) /
+                                          float(parent2.count_recognizers())
+
                 # Child 2 is (L2 + R1)
                 child2_reco = L2["recognizers"] + R1["recognizers"]
                 child2_conn = L2["connectors"] + R1["connectors"]
-                
+
+                # determine similarity of children to parents, based on 
+                # fraction of parent asigned to child
+                child2_prnt1_fraction = len(R1["recognizers"]) /
+                                          float(parent1.count_recognizers())
+                child2_prnt2_fraction = len(L2["recognizers"]) /
+                                          float(parent2.count_recognizers())                
+
             else:
                 # Second parent keeps the broken connector in the RIGHT chunk
                 L2, R2 = parent2.break_chain(index_2, "right")
@@ -343,8 +364,22 @@ class OrganismFactory:
         # !!! New (Missing documentation)
         child1.set_row_to_pssm()
         child2.set_row_to_pssm()
-        
-        return [child1, child2]
+
+        # set similarity
+        # dictionary with an organism and similarities to each parent
+        # similatiries are computed as the number of nodes shared  between
+        # each parent and child
+        child_1_plus_sims = {
+            "sim_org_1": child1_prnt1_fraction,
+            "sim_org_2": child1_prnt2_fraction,
+            "child": child1,
+        }                
+        child_2_plus_sims = {
+            "sim_org_1": child2_prnt1_fraction,
+            "sim_org_2": child2_prnt2_fraction,
+            "child": child2,
+        }                  
+        return {"child1": child_1_plus_sims, "child2": child_2_plus_sims}
 
     def import_organisms(self, file_name: str) -> list:
         """Import Organisms from file
