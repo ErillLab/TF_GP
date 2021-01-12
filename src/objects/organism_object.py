@@ -126,10 +126,23 @@ class OrganismObject:
         # Map used by the placement algorithm
         # The list maps each row of the matrix of the placement scores onto a
         # column of a PSSM: each row is assigned a [pssm_idx, column_idx]
-        self.row_to_pssm = []  # !!! New
+        self.row_to_pssm = []
  
     
-    def set_row_to_pssm(self):  # !!! New (Missing documentation)
+    def set_row_to_pssm(self):
+        """row_to_pssm is an attribute that maps each row of the alignment
+           matrix to the index (within org) of the pssm recognizer, and the
+           column of the pssm that applies to that row.
+           In the alignment matrix, the rows correspond all consecutively to 
+           pssm positions (i.e. columns).
+           This attribute allows to go from row directly to a pair of indices
+           denoting the pssm number and the position within the pssm that maps
+           to it.
+           
+           Call by factory upon generation of organism, and also after any
+           mutations that might change the size of the pssm, or the column order,
+           or their number.
+        """
         
         pssm_list = self.recognizers
         
@@ -144,11 +157,27 @@ class OrganismObject:
         
         # Token row
         # (this ensures that the last row will be considered the row of the last
-        # position of a PSSM when calling self.is_last() on it
+        # position of a PSSM when calling self.is_last() on it)
         row_to_pssm_list.append([None, 0])
         
         self.row_to_pssm = row_to_pssm_list
 
+    def get_id(self) -> int:
+        """Getter _id
+
+        Returns:
+            _id of the organism
+        """
+        return self._id
+
+    def set_id(self, _id: int) -> None:
+        """Setter _id
+
+        Args:
+            _id: ID to to set in the organism
+        """
+        self._id = _id
+        
     def mutate(self, org_factory) -> None:
         """Mutates an organism based on JSON configured probabilities
 
@@ -407,7 +436,10 @@ class OrganismObject:
                 connector_idx = random_node_idx - self.count_recognizers()
                 self.connectors[connector_idx].mutate(org_factory)
         
-        self.set_row_to_pssm()  # !!! New
+        # no matter what mutation is applied, order/columns/number of pssm's
+        # may have changed, so we call the set_row_to_pssm to set their mapping
+        # on the alignment matrix anew
+        self.set_row_to_pssm()
     
     def get_placement(self, dna_sequence, traceback=False, 
                       print_out = False, out_file = None) -> dict:
@@ -566,7 +598,10 @@ class OrganismObject:
                                      print_out=False, out_file=out_file)
 
             # Split node-scores into recognizers-scores and connectors-scores
-            node_scores = node_scores[1:]  # Remove token node
+            # Remove token node [first row is treated as a node, to provide
+            # a start position for the following recognizer, by tracking its
+            # end]
+            node_scores = node_scores[1:]  
             recognizers_scores = []
             connectors_scores = []
             for i in range(len(node_scores)):
@@ -901,7 +936,16 @@ class OrganismObject:
     
     def get_node_positions_and_energies(self, alignment_path, scores_matrix,
                                         pointers_matrix, dna_seq) -> list:
-        """Description here
+        """Takes the alignment path and the completed score and pointer matrices.
+           Returns a list that contains:
+           - node_scores: score of recognizer/connector node
+           - node_placements_right_ends: column of matrix where placement of node ends
+           - columns_of_0_bp_gaps: column with special contiguous recognizer case
+           
+           The alignment path is already reversed, so first element is top-left.
+           
+           Function goes through the alignment path and reports where each node
+           ends (column in alingment matrix)
 		"""
         
         # Use the path to get info about individual positions and score of all the
@@ -913,13 +957,15 @@ class OrganismObject:
         previous_element = [None, None]
         columns_of_0_bp_gaps = []
         
+        # for each element of the alignment path
         for element in alignment_path:
             row, column = element
             
-            # if we are on a row where gaps are allowed
+            # if we are on a row where gaps are allowed (PSSM ends or connector)
             if self.is_last(row):
                 
-                # if we just landed on this row via a diagonal move
+                # if we just landed on this row via a diagonal move, then 
+                # this is a PSSM end
                 if previous_element[0] == row - 1:
                     # The PSSM score needs to be recomputed (it could have been
                     # over-written by a gap-score)
@@ -928,26 +974,25 @@ class OrganismObject:
                                                          column, dna_seq)
                     cumulative_score = scores_matrix[row-1, column-1] + score
                 
+                # this was a gap, so no need to recompute score
                 else:
                     cumulative_score = scores_matrix[row, column]
                 
+                # compute the node score, by substracting from cumulative
                 node_score = cumulative_score - previous_score
                 node_scores.append(node_score)
                 previous_score = cumulative_score
                 
+                # mark its last position on matrix (right end)
                 node_placements_right_ends.append(column)
                 
             # if we are on the first position of a new pssm which is adjacent to
             # the previous one (gap of 0 bp), the cumulative score we read also
-            # contains the score of the first poition of the PSSM (not only the
+            # contains the score of the first position of the PSSM (not only the
             # connector score)
             if self.is_a_0_bp_gap(pointers_matrix, row, column):
                 
                 
-                #pssm_contribution = self.get_diag_score(
-                #    pointers_matrix, row, column, dna_seq
-                #)
-                                
                 nucleotide = dna_seq[column - 1] 
                 pssm_contribution = self.get_score_from_pssm(row, nucleotide)
                 
@@ -973,24 +1018,40 @@ class OrganismObject:
     
     def print_placement(self, node_right_ends, node_scores,
                         cols_of_0_gaps, dna_seq, 
-                        print_out = True, out_file = None):  # !!! New (missing documentation)
+                        print_out = True, out_file = None):
+        """For a dna_seq, it prints out the placement of the node on text or file.
+           
+           Gets:
+           - node_right_ends: last position [col] of nodes in alignment matrix
+           - node_scores: scores of nodes
         
+           In the alignment matrix we have an extra column (-infs).
+           We also have an extra row, which we are modeling as a "virtual" node,
+           with its associated "right_end".
+           Once we remove the extra column, the position of the previous node
+           "right end" on the matrix turn out to be the position of the current
+           node on the sequence.
+        """
         n = len(dna_seq)
         dashed_line = ["-"] * n
         dotted_line_1 = ["_"] * n
         dotted_line_2 = ["_"] * n
         
+        # for each node start
         for i in range(len(node_right_ends) - 1):
             
+            # get sequence coordinates for the node
             start = node_right_ends[i]
             stop = node_right_ends[i+1]
             
+            # get the node score and format it
             node_score = node_scores[i+1]
             node_score_str = "{:.2f}".format(node_score)
             
+            # if this is a recognizer (even numbers on chain)
             if i % 2 == 0:
                 
-                # Detect a post 0-bp gap recognizer
+                # Detect a post 0-bp gap recognizer (special case)
                 if start in cols_of_0_gaps:
                     start -= 1
                 
@@ -1000,11 +1061,12 @@ class OrganismObject:
                 
                 # write recognizer score
                 for c in range(len(node_score_str)):
-                    if start + c < len(dotted_line_1):  # avoid goin out of the seq
+                    if start + c < len(dotted_line_1):  # avoid going out of the seq
                         dotted_line_1[start + c] = node_score_str[c]
             
+            # if this is a connector
             else:
-                
+                # get size of gap
                 gap_size = stop - start
                 
                 # if the gap is large, the connector score is written in the middle
@@ -1021,12 +1083,14 @@ class OrganismObject:
                     if start + c < len(dotted_line_1):  # avoid goin out of the seq
                         dotted_line_2[start + c] = node_score_str[c]
         
+        # print to stdout if required
         if print_out:
             print(dna_seq)
             print("".join(dashed_line))
             print("".join(dotted_line_1))
             print("".join(dotted_line_2))
         
+        # print to file if required
         if out_file != None:
                 print(dna_seq, file=out_file)
                 print("".join(dashed_line), file=out_file)

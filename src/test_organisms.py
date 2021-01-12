@@ -46,12 +46,12 @@ def main():
     # create organisms in input file
     a_organisms = organism_factory.import_organisms(input_organisms_path)
 
-
-
-    
+    # for each organism: compute Boltzmann, Gini and discrmiminative fitness
+    # write out on console the results
+    # export the placement of the organism against each pos/neg set sequence
     for org in a_organisms:
         
-        start_time = time.time()
+        # start_time = time.time()
 
         nodes = org.count_nodes()
         
@@ -65,9 +65,9 @@ def main():
         # Gini coefficient
         gini_coeff = performance1["avg_gini"]
         
-        print("Boltzmann --- %s seconds ---" % (time.time() - start_time))
+        # print("Boltzmann --- %s seconds ---" % (time.time() - start_time))
         
-        start_time = time.time()
+        # start_time = time.time()
         # Discriminative fitness
         P = org.get_additive_fitness(positive_dataset[:max_sequences_to_fit_pos],
                                      traceback=False, print_out = False, 
@@ -78,8 +78,9 @@ def main():
                                      use_gini=False)["score"]
         
         discr_fitness =  P - N
-        print("Additive --- %s seconds ---" % (time.time() - start_time))
+        # print("Additive --- %s seconds ---" % (time.time() - start_time))
         
+        # print out results (fitness, nodes, Gini, etc.) for organism
         print(
             (
                 "Org {} Nodes: {:.2f} GiniPSSMs: {:.2f} P: {:.2f} N: {:.2f}"
@@ -95,8 +96,7 @@ def main():
                 )
         )
         
-        
-        
+                
         #export the organism results on the positive dataset
         export_organism(
             org,

@@ -92,18 +92,11 @@ def main():
     # Origin can be "random" or "file"(read a set of organisms from a file).
     if POPULATION_ORIGIN.lower() == "random":
         # For a random origin, we can generate #POPULATION_LENGTH organisms.
-
         for i in range(POPULATION_LENGTH):
             new_organism = organism_factory.get_organism()
             organism_population.append(new_organism)
-
-            mean_nodes += new_organism.count_nodes()
-
-	    # count recognizers
-            new_organism.count_nodes()
-            mean_recognizers += new_organism.num_recognizers
-
     elif POPULATION_ORIGIN.lower() == "file":
+        #if the population is seeded from file
         # Set the file organisms and fill with random/same organisms
         # POPULATION_LENGTH must be >= len(fileOrganisms)
         file_organisms = organism_factory.import_organisms(INPUT_FILENAME)
@@ -111,15 +104,13 @@ def main():
         fill_organism_population = []
 
         if POPULATION_FILL_TYPE.lower() == "random":
-            # FILL WITH RANDOM
-
+            # FILL remainder of the population WITH RANDOM organisms
             for i in range(remaining_organisms):
                 new_organism = organism_factory.get_organism()
                 fill_organism_population.append(new_organism)
 
         elif POPULATION_FILL_TYPE.lower() == "uniform":
-            # FILL WITH SAME ORGANISMS IN FILE
-
+            # FILL the remainder of the population WITH ORGANISMS IN FILE
             for i in range(remaining_organisms):
                 new_organism = copy.deepcopy(
                     file_organisms[i % len(file_organisms)]
@@ -127,25 +118,15 @@ def main():
                 fill_organism_population.append(new_organism)
                 new_organism.set_id(organism_factory.get_id())
 
-        # join & calculate mean nodes
+        # join 
         organism_population = file_organisms + fill_organism_population
-
-        for org in organism_population:
-            mean_nodes += org.count_nodes()
-
-	    # count recognizers
-            org.count_nodes()
-            mean_recognizers += org.num_recognizers
 
     else:
         raise Exception("Not a valid population origin, "
             + "check the configuration file.")
     
 
-    # Convert node count into mean
-    mean_nodes /= POPULATION_LENGTH
-    mean_recognizers /= POPULATION_LENGTH
-    print("len = {}".format(len(organism_population)))
+    print("Population size = {}".format(len(organism_population)))
     """
     Initialize iteration variables.
     """
@@ -154,16 +135,14 @@ def main():
     last_max_score = 0.0
     best_organism = (None, 0.0, 0, 0.0)
     max_organism = (None, 0.0, 0, 0.0)
-
     timeformat = "%Y-%m-%d--%H-%M-%S"
     print("Starting execution...")
 
     # Main loop, it iterates until organisms do not get a significant change
     # or MIN_ITERATIONS or MIN_FITNESS is reached.
 
-    while not is_finished(
-            END_WHILE_METHOD, iterations, max_score, last_max_score
-    ):
+    while not is_finished(END_WHILE_METHOD, iterations, max_score, 
+                          last_max_score):
 
         # Shuffle population & datasets
         # Organisms are shuffled for deterministic crowding selection
@@ -193,8 +172,8 @@ def main():
             #   - Similarity to organism 1
             #   - Similarity to organism 2
             #
-            children = combine_organisms(org1, org2, organism_factory)
-
+            # Recombination process
+            children = organism_factory.get_children(org1, org2)
             child1 = children["child1"]["child"]
             child2 = children["child2"]["child"]
 
@@ -235,18 +214,19 @@ def main():
                 first_organism = pair_children[j][0]  # Parent Organism
                 second_organism = pair_children[j][1]  # Chid Organism
 		
-		
                 # Boltzmannian fitness
                 if FITNESS_FUNCTION == "boltzmannian":
                     performance1 = first_organism.get_boltz_fitness(positive_dataset[:MAX_SEQUENCES_TO_FIT_POS],
                                                                     negative_dataset[:MAX_SEQUENCES_TO_FIT_NEG],
-                                                                    GENOME_LENGTH)
+                                                                    GENOME_LENGTH, traceback=True, 
+                                                                    print_out = False, use_gini=True)
                     fitness1 = performance1["score"]
                     gini1 = performance1["avg_gini"]
                     
                     performance2 = second_organism.get_boltz_fitness(positive_dataset[:MAX_SEQUENCES_TO_FIT_POS],
                                                                      negative_dataset[:MAX_SEQUENCES_TO_FIT_NEG],
-                                                                     GENOME_LENGTH)
+                                                                     GENOME_LENGTH, traceback=True, 
+                                                                     print_out = False, use_gini=True)
                     fitness2 = performance2["score"]
                     gini2 = performance2["avg_gini"]
                     
@@ -255,15 +235,23 @@ def main():
                 
                 # Discriminative fitness
                 elif FITNESS_FUNCTION == "discriminative":
-                    positive_performance1 = first_organism.get_discriminative_fitness(positive_dataset[:MAX_SEQUENCES_TO_FIT_POS])
-                    negative_performance1 = first_organism.get_discriminative_fitness(negative_dataset[:MAX_SEQUENCES_TO_FIT_NEG])
+                    positive_performance1 = first_organism.get_additive_fitness(positive_dataset[:MAX_SEQUENCES_TO_FIT_POS],
+                                                                        traceback=False, print_out = False, 
+                                                                        use_gini=False)
+                    negative_performance1 = first_organism.get_additive_fitness(negative_dataset[:MAX_SEQUENCES_TO_FIT_NEG],
+                                                                        traceback=False, print_out = False, 
+                                                                        use_gini=False)
                     p_1 = positive_performance1["score"]
                     n_1 = negative_performance1["score"]
                     fitness1 =  p_1 - n_1
                     gini1 = positive_performance1["avg_gini"]
                     
-                    positive_performance2 = second_organism.get_discriminative_fitness(positive_dataset[:MAX_SEQUENCES_TO_FIT_POS])
-                    negative_performance2 = second_organism.get_discriminative_fitness(negative_dataset[:MAX_SEQUENCES_TO_FIT_NEG])
+                    positive_performance2 = second_organism.get_additive_fitness(positive_dataset[:MAX_SEQUENCES_TO_FIT_POS],
+                                                                        traceback=False, print_out = False, 
+                                                                        use_gini=False)
+                    negative_performance2 = second_organism.get_additive_fitness(negative_dataset[:MAX_SEQUENCES_TO_FIT_NEG],
+                                                                        traceback=False, print_out = False, 
+                                                                        use_gini=False)
                     p_2 = positive_performance2["score"]
                     n_2 = negative_performance2["score"]
                     fitness2 =  p_2 - n_2
@@ -271,7 +259,7 @@ def main():
                 
                 else:
                     raise Exception("Not a valid fitness function name, "
-                        + "check the configuration file.")
+                                    + "check the configuration file.")
 
 
                 if MAX_NODES != None:  # Upper_bound to complexity
@@ -283,7 +271,16 @@ def main():
                     if second_organism.count_nodes() > MAX_NODES:
                         #print(second_organism.count_nodes(), "nodes")
                         fitness2 = -1000 * int(second_organism.count_nodes())
-                
+
+                if MIN_NODES != None:  # Lower_bound to complexity
+                    
+                    if first_organism.count_nodes() < MIN_NODES:
+                        #print(first_organism.count_nodes(), "nodes")
+                        fitness1 = -1000 * int(first_organism.count_nodes())
+                    
+                    if second_organism.count_nodes() < MIN_NODES:
+                        #print(second_organism.count_nodes(), "nodes")
+                        fitness2 = -1000 * int(second_organism.count_nodes())                
                 
                 if INEQUALITY_PENALTY_METHOD=="avg_gini":
                     # INEQUALITY_PENALTY_PARAM acts as a penalty buffer
@@ -333,26 +330,6 @@ def main():
                     # second_organism.count_nodes() -
                     # first_organism.count_nodes()) / POPULATION_LENGTH
                     a_nodes.append(second_organism.count_nodes())
-
-                    # Pass tracking parameter from paretn to child
-                    second_organism.set_is_tracked(first_organism.is_tracked)
-                    if second_organism.is_tracked:
-                        # Export it If its being tracked
-                        print_ln(
-                            "Evolution {}->{}".format(
-                                first_organism._id, second_organism.ID
-                            ),
-                            RESULT_BASE_PATH_DIR + "evolution.txt",
-                        )
-                        filename = "tr{}_{}".format(
-                            time.strftime(timeformat), second_organism._id
-                        )
-                        export_organism(
-                            second_organism,
-                            positive_dataset,
-                            filename,
-                            organism_factory,
-                        )
 
                     # Check if its the max score in that iteration
                     if effective_fitness_2 > max_score:
@@ -496,118 +473,6 @@ def export_organism(
     factory.export_organisms([organism], organism_file_json)
 
 
-def combine_organisms(
-        organism1, organism2, organism_factory: OrganismFactory
-) -> dict:
-    """Gets 2 organisms, and returns 2 children with format
-    (child, similarity to parent 1, similarity to parent 2)
-
-    Args:
-        organism1 (OrganismObject): First organism for the crossover
-        organism2 (OrganismObject): Second organism for the crossover
-        organism_factory: factory used to set the children ids
-
-    Retruns:
-        A dictionary with 2 children:
-        "child1": child derived from organism1
-        "child2": child derived from organism1
-    """
-    # Save the number of nodes from the parents
-    n_nodes_org_1 = organism1.count_nodes()
-    n_nodes_org_2 = organism2.count_nodes()
-
-    # Create the 2 childs and assign new IDs
-    child1 = copy.deepcopy(organism1)
-    child2 = copy.deepcopy(organism2)
-
-    # Assign IDs to organisms and increase factory counter
-    child1.set_id(organism_factory.get_id())
-    child2.set_id(organism_factory.get_id())
-
-    # Combine parents with probability p
-    if random.random() < RECOMBINATION_PROBABILITY:
-
-        # Select random nodes to swap from each child
-        random_node_1 = random.randint(0, n_nodes_org_1 - 1)
-        random_node_2 = random.randint(0, n_nodes_org_2 - 1)
-        node1 = child1.get_node(random_node_1)
-        node2 = child2.get_node(random_node_2)
-
-        # Save the number of nodes taken from each  child
-        n_nodes_from_org_1 = node1.count_nodes()
-        n_nodes_from_org_2 = node2.count_nodes()
-
-        # Get parents nodes of swapping nodes before swap
-        parent_node_1 = child1.get_parent(node1._id)
-        parent_node_2 = child2.get_parent(node2._id)
-
-        # Swap nodes
-        # Set nodes in oposite children
-        # based on recipient parent node determine if incoming node goes to
-        # left descendent or right descendent
-        # if recipient node is root, subsitute with incoming
-        if parent_node_1["is_root_node"]:
-            # Its the root node of child 1
-            child1.set_root_node(node2)
-        else:
-            if parent_node_1["is_left_side"]:
-                # Child on left side
-                parent_node_1["self"].set_node1(node2)
-            else:
-                # Child on right side
-                parent_node_1["self"].set_node2(node2)
-
-        if parent_node_2["is_root_node"]:
-            # Its the root node of child 2
-            child2.set_root_node(node1)
-        else:
-            if parent_node_2["is_left_side"]:
-                # Child on left side
-                parent_node_2["self"].set_node1(node1)
-            else:
-                # Child on right side
-                parent_node_2["self"].set_node2(node1)
-
-        n_nodes_child_1 = child1.count_nodes()
-        n_nodes_child_2 = child2.count_nodes()
-
-        # Reset children node IDs across the organism
-        child1.reset_ids()
-        child2.reset_ids()
-
-        # dictionary with an organism and similarities to each parent
-        # similatiries are computed as the number of nodes shared  between
-        # each parent and child
-        child_1_similarities = {
-            "sim_org_1": (n_nodes_child_1 - n_nodes_from_org_2)
-                         / n_nodes_child_1,
-            "sim_org_2": n_nodes_from_org_2 / n_nodes_child_1,
-            "child": child1,
-        }
-
-        child_2_similarities = {
-            "sim_org_1": n_nodes_from_org_1 / n_nodes_child_2,
-            "sim_org_2": (n_nodes_child_2 - n_nodes_from_org_1)
-                         / n_nodes_child_2,
-            "child": child2,
-        }
-    else:
-
-        # If children are not recombined, return the same organisms and their
-        # similarities
-        child_1_similarities = {
-            "sim_org_1": 1,  # Equal to organism 1
-            "sim_org_2": 0,
-            "child": child1,
-        }
-
-        child_2_similarities = {
-            "sim_org_1": 0,
-            "sim_org_2": 1,  # Equal to organism2
-            "child": child2,
-        }
-
-    return {"child1": child_1_similarities, "child2": child_2_similarities}
 
 
 def set_up():
@@ -628,6 +493,7 @@ def set_up():
     global MAX_SEQUENCES_TO_FIT_POS
     global MAX_SEQUENCES_TO_FIT_NEG
     global FITNESS_FUNCTION
+    global USE_GINI
     global GENOME_LENGTH
     global INEQUALITY_PENALTY_METHOD
     global INEQUALITY_PENALTY_PARAM
@@ -638,7 +504,6 @@ def set_up():
     global POPULATION_FILL_TYPE
     global INPUT_FILENAME
     global OUTPUT_FILENAME
-    global RECOMBINATION_PROBABILITY
     global PERIODIC_EXPORT
     global MAX_NODES
     global MIN_NODES
@@ -663,6 +528,7 @@ def set_up():
     MAX_SEQUENCES_TO_FIT_POS = config["main"]["MAX_SEQUENCES_TO_FIT_POS"]
     MAX_SEQUENCES_TO_FIT_NEG = config["main"]["MAX_SEQUENCES_TO_FIT_NEG"]
     FITNESS_FUNCTION = config["main"]["FITNESS_FUNCTION"]
+    USE_GINI = config["main"]["USE_GINI"]
     GENOME_LENGTH = config["main"]["GENOME_LENGTH"]
     INEQUALITY_PENALTY_METHOD = config["main"]["INEQUALITY_PENALTY_METHOD"]
     INEQUALITY_PENALTY_PARAM = config["main"]["INEQUALITY_PENALTY_PARAM"]
@@ -674,7 +540,6 @@ def set_up():
     POPULATION_FILL_TYPE = config["main"]["POPULATION_FILL_TYPE"]
     INPUT_FILENAME = config["main"]["INPUT_FILENAME"]
     OUTPUT_FILENAME = config["main"]["OUTPUT_FILENAME"]
-    RECOMBINATION_PROBABILITY = config["main"]["RECOMBINATION_PROBABILITY"]
     PERIODIC_EXPORT = config["main"]["PERIODIC_EXPORT"]
     MAX_NODES = config["organism"]["MAX_NODES"]
     MIN_NODES = config["organism"]["MIN_NODES"]
