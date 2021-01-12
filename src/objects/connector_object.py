@@ -15,13 +15,13 @@ import math
 
 
 def norm_pdf(x, mu, sigma):
-    """Normal probablity densitity function
-   computes the normal probability density function
-   used to compute the energy provided by the connector
-   the distance at which connecting nodes are placed
-   is the 'x' for the function, which will return the
-   probability of observing said distance under the 
-   connector model
+    """ Normal probablity densitity function
+        computes the normal probability density function
+        used to compute the energy provided by the connector
+        the distance at which connecting nodes are placed
+        is the 'x' for the function, which will return the
+        probability of observing said distance under the 
+        connector model
    """
     if sigma != 0:
         var = float(sigma)**2
@@ -73,7 +73,21 @@ class ConnectorObject():
         self.mutate_probability_mu = config["MUTATE_PROBABILITY_MU"]
         self.mutate_variance_sigma = config["MUTATE_VARIANCE_SIGMA"]
         self.mutate_variance_mu = config["MUTATE_VARIANCE_MU"]
-        self.placement_options = config["PLACEMENT_OPTIONS"]
+        self.expected_seq_length = config["EXPECTED_SEQ_LENGTH"]
+        
+        # precompute connector energies for expected length range
+        self.stored_pdfs = []
+        self.stored_cdfs = []
+        for dist in range(self.expected_seq_length):
+            self.stored_pdfs.append(norm_pdf(dist, self._mu, self._sigma))
+            if self._sigma != 0:
+                self.stored_cdfs.append(norm_cdf(dist, self._mu, self._sigma))
+            else:
+                if dist<self._mu:
+                    self.stored_cdfs.append(0.0)
+                else:
+                    self.stored_cdfs.append(1.0)
+                    
 
     # pylint: enable=R0913
     # Setters
@@ -101,8 +115,6 @@ class ConnectorObject():
             org_factory(organism_factory): Organism Facory
         """
         
-        
-        
         # LINEAR SIGMA MUTATION
         if random.random() < self.mutate_probability_sigma:
             # Update sigma with a random permutation within allowed interval
@@ -110,9 +122,7 @@ class ConnectorObject():
                 self._sigma + random.uniform(-self.mutate_variance_sigma,
                                              self.mutate_variance_sigma)
             )
-            
-
-
+ 
         '''
         # LOGARITHMIC SIGMA MUTATION
         if random.random() < self.mutate_probability_sigma:
@@ -135,22 +145,53 @@ class ConnectorObject():
 
     # pylint: enable=W0613
 
-    def get_score(self, d, s_dna_len):
-        
-        
-        # Numerator                
-        numerator = norm_pdf(d, self._mu, self._sigma)
+       
+    def get_score(self, d, s_dna_len) -> float:
+        """ Returns the score of the connector, given the observed distance
+            and the length of the DNA sequence on which it is being evaluated.
+            Parameters
+            ----------
+            d : observed distancce
+            s_dna_len : length of DNA sequence on which connector is placed
+    
+            Returns
+            -------
+            e_connector : the connector's score
+            
+            The score of the connector is computed as a log-likelihood ratio.
+            The numerator is the probability of observing the distance provided
+            given the connector's parameters.
+            The probability of observing distance d, given the connector's
+            parameters is given by norm_pdf.
+            The probability is then normalized by the cumulative probability
+            function within the observable range on the sequence.
+            
+            The denominator is the probability of observing the distance
+            provided under the null hypothesis.
+            
+            To speed up the process, pdfs and cdfs are precomputed for the
+            "expected" distance range during connector construction, and looked
+            up, rather than recomputed here.
+
+        """
+        # Numerator
+        if d<self.expected_seq_length:
+            numerator = self.stored_pdfs[d]
+        else:
+            numerator = norm_pdf(d, self._mu, self._sigma)
         
         # Normalize by AUC within the range of observable d values
-        
         max_d = s_dna_len - 1  # Maximum d observable
         min_d = -1 * max_d  # Minimum d observable
         
         if self._sigma == 0:
             auc = 1.0  # all the gaussian is within the (-(L-1), +(L-1)) range
         else:
-            auc = (norm_cdf(max_d, self._mu, self._sigma) -
-                   norm_cdf(min_d, self._mu, self._sigma))
+            if max_d<self.expected_seq_length:
+                auc = self.stored_cdfs[max_d] - self.stored_cdfs[min_d]
+            else:
+                auc = (norm_cdf(max_d, self._mu, self._sigma) -
+                       norm_cdf(min_d, self._mu, self._sigma))
         
         # Avoid zero-division error
         # This will never happen, unless an organism evolves an extremely large sigma
@@ -160,8 +201,8 @@ class ConnectorObject():
         
         # avoid log(0) error when computing e_connector
         if numerator < 1e-100:
-            numerator = 1e-100
-        
+            numerator = 1e-100        
+
         # Apply normalization
         numerator = numerator / auc
         
@@ -175,7 +216,7 @@ class ConnectorObject():
         # Therefore  p(d|null_model) = (L-abs(d)) / (L*(L-1))
         denominator = (s_dna_len - abs(d)) / (s_dna_len * (s_dna_len-1))
         
-        # compute additive connector energy term
+        # compute additive connector energy term as log-likelihood ratio
         e_connector = np.log2(numerator / denominator)
         
         return e_connector
