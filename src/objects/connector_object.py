@@ -182,16 +182,16 @@ class ConnectorObject():
         
         # Normalize by AUC within the range of observable d values
         max_d = s_dna_len - 1  # Maximum d observable
-        min_d = -1 * max_d  # Minimum d observable
+        # min_d = -1 * max_d  # Minimum d observable
         
         if self._sigma == 0:
             auc = 1.0  # all the gaussian is within the (-(L-1), +(L-1)) range
         else:
             if max_d<self.expected_seq_length:
-                auc = self.stored_cdfs[max_d] - self.stored_cdfs[min_d]
+                auc = self.stored_cdfs[max_d] - self.stored_cdfs[0]
             else:
                 auc = (norm_cdf(max_d, self._mu, self._sigma) -
-                       norm_cdf(min_d, self._mu, self._sigma))
+                       norm_cdf(0, self._mu, self._sigma))
         
         # Avoid zero-division error
         # This will never happen, unless an organism evolves an extremely large sigma

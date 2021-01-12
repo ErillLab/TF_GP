@@ -78,6 +78,9 @@ def main():
     mean_nodes = 0
     mean_recognizers = 0
     mean_fitness = 0
+
+    print("Instantiating population...")
+
     """
     Generate initial population
     """

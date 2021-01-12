@@ -1,6 +1,6 @@
 {
   "main": {
-    "POPULATION_LENGTH": 4,
+    "POPULATION_LENGTH": 10,
     "POPULATION_ORIGIN":"random",
     "POPULATION_FILL_TYPE":"random",
     "DATASET_BASE_PATH_DIR":"datasets/",
@@ -34,7 +34,7 @@
     "MUTATE_PROBABILITY_INSERT_RECOGNIZER":1,
     "MUTATE_PROBABILITY_SUBSTITUTE_PSSM":0,
     "MIN_NODES":1,
-    "MAX_NODES":5
+    "MAX_NODES":7
   },
   "organismFactory": {
     "RECOMBINATION_PROBABILITY":0.5,
@@ -68,7 +68,6 @@
     "MAX_COLUMNS":8,
     "UPPER_PRINT_PROBABILITY":0.8,
     "PSEUDO_COUNT":1e-10,
-    "PLACEMENT_OPTIONS":9,
     "SCAN_REVERSE_COMPLEMENT":false
   }
 }
