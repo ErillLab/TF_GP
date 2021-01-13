@@ -383,7 +383,10 @@ class OrganismObject:
                     current_sum_mus = mu_old_connector + mu_new_connector
                     expected_sum_mus = mu_old_connector
                     
-                    mu_scaling_factor =  expected_sum_mus / current_sum_mus
+                    if current_sum_mus == 0:  # To avoid 0/0 case
+                        mu_scaling_factor = 1
+                    else:
+                        mu_scaling_factor =  expected_sum_mus / current_sum_mus
                     # Compress the neighbour connector
                     self.connectors[connector_to_compress].set_mu(
                         mu_old_connector * mu_scaling_factor
