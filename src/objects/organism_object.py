@@ -1110,11 +1110,8 @@ class OrganismObject:
         """
         
         num_connectors =  self.count_connectors()
-        try:
-            return random.randint(0, num_connectors - 1)
-        except:
-            print ("Connectors: ", num_connectors)
-            return 0
+        return random.randint(0, num_connectors - 1)
+
 
     def get_random_recognizer(self) -> int:
         """Returns the index of a random recognizer of the organism
