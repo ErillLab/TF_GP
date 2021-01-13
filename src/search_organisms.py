@@ -395,7 +395,7 @@ def main():
 
         # Print against a random positive sequence
         random.shuffle(positive_dataset)
-        print(max_organism[0].print_result(positive_dataset[0]))
+        max_organism[0].get_placement(positive_dataset[0], print_out = True)
 
         # Export organism if new best organism
         if changed_best_score:
