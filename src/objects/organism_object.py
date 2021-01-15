@@ -246,7 +246,7 @@ class OrganismObject:
                     connector_idx = recognizer_idx - 1
                 else:
                     # if the recognizer to delete is in not a terminal recognizer
-                    # of the chain, the parent connector to be deleted (left/riht)
+                    # of the chain, the parent connector to be deleted (left/right)
                     # is chosen randomly
                     if random.random() < 0.5:
                         # Index of the parent connector that will be deleted
@@ -262,16 +262,24 @@ class OrganismObject:
                     # Adjust parameters of the neighbour connector
                     ''' The parent connector that is not deleted is modified,
                     so that it can span the gap left by the deletion, without
-                    heavily affecting the placement of the nodes to the side of
-                    the deletion point.
-                    '''
-                    # The average distance (mu) of the deleted connector is
-                    # added to its mu
+                    heavily affecting the placement of the nodes to the sides of
+                    the deletion point.'''
+                    
+                    # Adjust MU
+                    '''Thus, we need to add to the mu of the remaining connector
+                    also the mu of the deleted connector and the legth of the
+                    deleted recognizer.'''
                     adj_mu = (self.connectors[connector_to_stretch]._mu +
-                              self.connectors[connector_idx]._mu)
-                    # Its standard deviation (sigma) becomes the square root of
-                    # the sum of the squares of the sigmas (under assumption of
-                    # independence between the two random variables)
+                              self.connectors[connector_idx]._mu +
+                              self.recognizers[recognizer_idx].length)
+                    
+                    # Adjust SIGMA
+                    ''' Variances are additive (under assumption of independence
+                    between the two random variables). Therefore to adjust the
+                    variance we need to add the variance of the deleted
+                    connector (the length of the deleted recognizer has no
+                    variance). Therefore, its standard deviation (sigma) becomes
+                    the square root of the sum of the squares of the sigmas.'''
                     adj_sigma = (self.connectors[connector_to_stretch]._sigma ** 2 +
                                 self.connectors[connector_idx]._sigma ** 2)**(1/2)
                     # set new mu and new sigma
@@ -377,11 +385,32 @@ class OrganismObject:
 				# if connector needs to be "compressed" (not a terminal insertion)
                 if connector_to_compress != None:
                     
+                    '''Ideally, we would like the sum of the mus of the two
+                    connectors (the old one and the inserted one) + the length
+                    of the inserted recognizer to be equal to the gap spanned
+                    by the old recognizer, so that the insertion doesn't heavily
+                    affect the placement of the nodes to the sides of the
+                    insertion point. So we need to scale down the mus and sigmas
+                    accordingly.'''
+                    
                     # Adjust MUs
+                    ''' If the legth of the inserted recognizer alone is larger
+                    than the gap (i.e. larger than the mu of the already present
+                    connector) we can't reach the goal entirely and the best
+                    thing we can do is to keep the mus of the two connectors
+                    maximally shrinked. Otherwise, the mus of the connectors
+                    will be scaled so that their sum is equal to the gap (mu of
+                    the old connector) minus the length of the inserted
+                    recognizer.'''
+                    
                     mu_old_connector = self.connectors[connector_to_compress]._mu
-                    mu_new_connector = new_connector._mu
+                    mu_new_connector = new_connector._mu                    
                     current_sum_mus = mu_old_connector + mu_new_connector
-                    expected_sum_mus = mu_old_connector
+                    expected_sum_mus = mu_old_connector - new_recognizer.length
+                    # If the inserted recognizer alone is larger than the gap
+                    if expected_sum_mus < 0:
+                        # best thing we can do is to maximally shrink mus
+                        expected_sum_mus = 0
                     
                     if current_sum_mus == 0:  # To avoid 0/0 case
                         mu_scaling_factor = 1
@@ -397,12 +426,23 @@ class OrganismObject:
                     )
                     
                     # Adjust SIGMAs
+                    ''' Variances are additive (under assumption of independence
+                    between the two random variables). Therefore, the overall
+                    variance will be the sum of the variances of the two
+                    connectors. The variances will be scaled so that their sum
+                    is equal to the variance of the connector that was already
+                    present before the insertion. The standard deviations,
+                    which are the square root of the variances, will be adjusted
+                    accordingly.'''
                     var_old_connector = self.connectors[connector_to_compress]._sigma ** 2
                     var_new_connector = new_connector._sigma**2
                     current_sum_variances = var_old_connector + var_new_connector
                     expected_sum_variances = var_old_connector
                     
-                    var_scaling_factor =  expected_sum_variances / current_sum_variances
+                    if current_sum_variances == 0:  # To avoid 0/0 case
+                        var_scaling_factor = 1
+                    else:
+                        var_scaling_factor =  expected_sum_variances / current_sum_variances
                     # Compress the neighbour connector
                     self.connectors[connector_to_compress].set_sigma(
                         np.sqrt(var_old_connector * var_scaling_factor)
