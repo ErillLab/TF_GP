@@ -308,24 +308,11 @@ class OrganismFactory:
                         child1_reco = L1["recognizers"] + R2["recognizers"]
                         child1_conn = L1["connectors"] + R2["connectors"]
             
-                        # # determine similarity of children to parents, based on 
-                        # # fraction of parent asigned to child
-                        # child1_prnt1_fraction = len(L1["recognizers"]) \
-                        #                         / float(parent1.count_recognizers())
-                        # child1_prnt2_fraction = len(R2["recognizers"]) \
-                        #                         / float(parent2.count_recognizers())
-        
-                        # Child 2 is (L2 + R1)
+                       # Child 2 is (L2 + R1)
                         child2_reco = L2["recognizers"] + R1["recognizers"]
                         child2_conn = L2["connectors"] + R1["connectors"]
         
-                        # # determine similarity of children to parents, based on 
-                        # # fraction of parent asigned to child
-                        # child2_prnt1_fraction = len(R1["recognizers"]) \
-                        #                         / float(parent1.count_recognizers())
-                        # child2_prnt2_fraction = len(L2["recognizers"]) \
-                        #                         / float(parent2.count_recognizers())                
-        
+       
                     else:
                         # Second parent keeps the broken connector in the RIGHT chunk
                         L2, R2 = parent2.break_chain(index_2, "right")
@@ -334,21 +321,9 @@ class OrganismFactory:
                         # Child 1 is (L1 + L2)
                         child1_reco = L1["recognizers"] + L2["recognizers"]
                         child1_conn = L1["connectors"] + L2["connectors"]
-                        # # determine similarity of children to parents, based on 
-                        # # fraction of parent asigned to child
-                        # child1_prnt1_fraction = len(L1["recognizers"]) \
-                        #                         / float(parent1.count_recognizers())
-                        # child1_prnt2_fraction = len(L2["recognizers"]) \
-                        #                         / float(parent2.count_recognizers())
                         # Child 2 is (R1 + R2)
                         child2_reco = R1["recognizers"] + R2["recognizers"]
                         child2_conn = R1["connectors"] + R2["connectors"]
-                        # # determine similarity of children to parents, based on 
-                        # # fraction of parent asigned to child
-                        # child2_prnt1_fraction = len(R1["recognizers"]) \
-                        #                         / float(parent1.count_recognizers())
-                        # child2_prnt2_fraction = len(R2["recognizers"]) \
-                        #                         / float(parent2.count_recognizers())                 
                 else:
                     # First parent keeps the broken connector in the RIGHT chunk
                     L1, R1 = parent1.break_chain(index_1, "right")
@@ -361,21 +336,9 @@ class OrganismFactory:
                         # Child 1 is (L2 + L1)
                         child1_reco = L2["recognizers"] + L1["recognizers"]
                         child1_conn = L2["connectors"] + L1["connectors"]
-                        # # determine similarity of children to parents, based on 
-                        # # fraction of parent asigned to child
-                        # child1_prnt1_fraction = len(L1["recognizers"]) \
-                        #                         / float(parent1.count_recognizers())
-                        # child1_prnt2_fraction = len(L2["recognizers"]) \
-                        #                         / float(parent2.count_recognizers())
                         # Child 2 is (R2 + R1)
                         child2_reco = R2["recognizers"] + R1["recognizers"]
                         child2_conn = R2["connectors"] + R1["connectors"]
-                        # # determine similarity of children to parents, based on 
-                        # # fraction of parent asigned to child
-                        # child2_prnt1_fraction = len(R1["recognizers"]) \
-                        #                         / float(parent1.count_recognizers())
-                        # child2_prnt2_fraction = len(R2["recognizers"]) \
-                        #                         / float(parent2.count_recognizers())                 
                     
                     else:
                         # Second parent keeps the broken connector in the RIGHT chunk
@@ -385,22 +348,10 @@ class OrganismFactory:
                         # Child 1 is (L1 + R2)
                         child1_reco = L1["recognizers"] + R2["recognizers"]
                         child1_conn = L1["connectors"] + R2["connectors"]
-                        # # determine similarity of children to parents, based on 
-                        # # fraction of parent asigned to child
-                        # child1_prnt1_fraction = len(L1["recognizers"]) \
-                        #                         / float(parent1.count_recognizers())
-                        # child1_prnt2_fraction = len(R2["recognizers"]) \
-                        #                         / float(parent2.count_recognizers())
                         # Child 2 is (L2 + R1)
                         child2_reco = L2["recognizers"] + R1["recognizers"]
                         child2_conn = L2["connectors"] + R1["connectors"]
-                        # # determine similarity of children to parents, based on 
-                        # # fraction of parent asigned to child
-                        # child2_prnt1_fraction = len(R1["recognizers"]) \
-                        #                         / float(parent1.count_recognizers())
-                        # child2_prnt2_fraction = len(L2["recognizers"]) \
-                        #                         / float(parent2.count_recognizers())                 
-
+ 
                 # Set child1 recognizers and connectors
                 child1.set_recognizers(child1_reco)
                 child1.set_connectors(child1_conn)
@@ -432,11 +383,6 @@ class OrganismFactory:
                     child2.recognizers[index_2] = child1.recognizers[0]
                     # child 1 takes the random child2 recognizer
                     child1.recognizers[0] = temp
-                    # # assign similarities
-                    # child1_prnt1_fraction = 1   # we force single-nodes to have 100% identity
-                    # child1_prnt2_fraction = 0   # with their "real", deep-copy parent
-                    # child2_prnt1_fraction = 0   # so that they will compete with similar-sized orgs
-                    # child2_prnt2_fraction = 1
                
                 # single-node org is child 2
                 else:
@@ -448,31 +394,11 @@ class OrganismFactory:
                     child1.recognizers[index_1] = child2.recognizers[0]
                     # child 1 takes the random child2 recognizer
                     child2.recognizers[0] = temp
-                    # # assign similarities
-                    # child2_prnt1_fraction = 0  # we force single-nodes to have 100% identity
-                    # child2_prnt2_fraction = 1  
-                    # child1_prnt2_fraction = 1 
-                    # child1_prnt1_fraction = 0
-                    
+                   
                 # Set attribute that will map organism nodes to alignment matrix rows
                 child1.set_row_to_pssm()
                 child2.set_row_to_pssm()                       
 
-    
-            # # set similarity
-            # # dictionary with an organism and similarities to each parent
-            # # similatiries are computed as the number of nodes shared  between
-            # # each parent and child
-            # child_1_plus_sims = {
-            #     "sim_org_1": child1_prnt1_fraction,
-            #     "sim_org_2": child1_prnt2_fraction,
-            #     "child": child1,
-            # }                
-            # child_2_plus_sims = {
-            #     "sim_org_1": child2_prnt1_fraction,
-            #     "sim_org_2": child2_prnt2_fraction,
-            #     "child": child2,
-            # }
         # no recombination case                  
         else:
             # Create the 2 children and assign new IDs
@@ -482,20 +408,6 @@ class OrganismFactory:
             child1.set_id(self.get_id())
             child2.set_id(self.get_id())
 
-            # # If children are not recombined, return the same organisms and their
-            # # similarities
-            # child_1_plus_sims = {
-            #     "sim_org_1": 1,  # Equal to organism 1
-            #     "sim_org_2": 0,
-            #     "child": child1,
-            # }
-    
-            # child_2_plus_sims = {
-            #     "sim_org_1": 0,
-            #     "sim_org_2": 1,  # Equal to organism2
-            #     "child": child2,
-            # }
-            
         # return {"child1": child_1_plus_sims, "child2": child_2_plus_sims}
         return [child1, child2]
 
