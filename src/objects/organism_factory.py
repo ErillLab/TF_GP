@@ -291,8 +291,8 @@ class OrganismFactory:
                 index_2 = parent2.get_random_connector()
                 
                 # Instantiate children organisms
-                 child1 = OrganismObject(self.get_id(), self.conf_org, self.conf_pssm["MAX_COLUMNS"])
-                 child2 = OrganismObject(self.get_id(), self.conf_org, self.conf_pssm["MAX_COLUMNS"])
+                child1 = OrganismObject(self.get_id(), self.conf_org, self.conf_pssm["MAX_COLUMNS"])
+                child2 = OrganismObject(self.get_id(), self.conf_org, self.conf_pssm["MAX_COLUMNS"])
              
                 # decide how the split is handled
                 if random.random() < 0.5:

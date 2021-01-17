@@ -207,22 +207,23 @@ def main():
             #     pair_children.append((org1, child2))
             #     pair_children.append((org2, child1))
 
+            pair_children = []
             # get lengths for all organisms (parents and children)
             lorg1 = org1.count_nodes()
             lorg2 = org2.count_nodes()
-            lchld1 = child1.count_nodeS()
-            lchld2 = child2.count_nodeS()
+            lchld1 = child1.count_nodes()
+            lchld2 = child2.count_nodes()
             
             # make pairs based on size
-            if logr1 > lorg2:
-                if lchld1 > lchdl2:
+            if lorg1 > lorg2:
+                if lchld1 > lchld2:
                     pair_children.append((org1, child1))
                     pair_children.append((org2, child2))
                 else:
                     pair_children.append((org1, child2))
                     pair_children.append((org2, child1))                    
             else:
-                if lchld1 > lchdl2:
+                if lchld1 > lchld2:
                     pair_children.append((org1, child2))
                     pair_children.append((org2, child1))
                 else:
