@@ -176,39 +176,59 @@ def main():
             #   - Similarity to organism 2
             #
             # Recombination process
-            children = organism_factory.get_children(org1, org2)
-            child1 = children["child1"]["child"]
-            child2 = children["child2"]["child"]
+            child1, child2 = organism_factory.get_children(org1, org2)
 
             # Mutate children
             child1.mutate(organism_factory)
             child2.mutate(organism_factory)
 
-            # Match parent with its closest child for deterministic crowding
-            # selection.
-            # There are 2 possible combinations p_1-c1, p_2-c2 & p1-c2, p2-c1
-            # We select a combination based on a sum of similarities in
-            # combinations
-            combination_1 = (
-                children["child1"]["sim_org_1"]
-                + children["child2"]["sim_org_2"]
-            )  # Match the first parent to first child and second parent to
-            # second child
-            combination_2 = (
-                children["child1"]["sim_org_2"]
-                + children["child2"]["sim_org_1"]
-            )  # Match the first parent to second child and second parent to
-            # first child
+            # # Match parent with its closest child for deterministic crowding
+            # # selection.
+            # # There are 2 possible combinations p_1-c1, p_2-c2 & p1-c2, p2-c1
+            # # We select a combination based on a sum of similarities in
+            # # combinations
+            # combination_1 = (
+            #     children["child1"]["sim_org_1"]
+            #     + children["child2"]["sim_org_2"]
+            # )  # Match the first parent to first child and second parent to
+            # # second child
+            # combination_2 = (
+            #     children["child1"]["sim_org_2"]
+            #     + children["child2"]["sim_org_1"]
+            # )  # Match the first parent to second child and second parent to
+            # # first child
 
-            pair_children = []
+            # pair_children = []
 
-            if combination_1 > combination_2:
-                pair_children.append((org1, child1))
-                pair_children.append((org2, child2))
+            # if combination_1 > combination_2:
+            #     pair_children.append((org1, child1))
+            #     pair_children.append((org2, child2))
+            # else:
+            #     pair_children.append((org1, child2))
+            #     pair_children.append((org2, child1))
+
+            # get lengths for all organisms (parents and children)
+            lorg1 = org1.count_nodes()
+            lorg2 = org2.count_nodes()
+            lchld1 = child1.count_nodeS()
+            lchld2 = child2.count_nodeS()
+            
+            # make pairs based on size
+            if logr1 > lorg2:
+                if lchld1 > lchdl2:
+                    pair_children.append((org1, child1))
+                    pair_children.append((org2, child2))
+                else:
+                    pair_children.append((org1, child2))
+                    pair_children.append((org2, child1))                    
             else:
-                pair_children.append((org1, child2))
-                pair_children.append((org2, child1))
-
+                if lchld1 > lchdl2:
+                    pair_children.append((org1, child2))
+                    pair_children.append((org2, child1))
+                else:
+                    pair_children.append((org2, child2))
+                    pair_children.append((org1, child1))                    
+          
             # Make two organisms compete
             # j index is used to re insert winning organism
             # into the population

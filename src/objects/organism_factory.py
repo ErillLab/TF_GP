@@ -91,6 +91,11 @@ class OrganismFactory:
         number_of_recognizers = np.random.poisson(self.num_recognizers_lambda_param - 1)
         number_of_recognizers += 1
         
+        # avoid signle PSSM case, which breaks recombination operator, that 
+        # assumes at least one connector is present
+        if number_of_recognizers == 1:
+            number_of_recognizers += 1
+        
         # for each recognizer in the organism
         for i in range(number_of_recognizers - 1):
             # instantiate new recognizer and append it to organism's recognizer list
@@ -275,148 +280,199 @@ class OrganismFactory:
         """
 
         # Combine parents with probability p
-        if random.random() < self.recombination_probability:        
-            # Select one connector in each parent for the split
-            index_1 = parent1.get_random_connector()
-            index_2 = parent2.get_random_connector()
-            
-           # Instantiate children nodes
-            child1 = OrganismObject(self.get_id(), self.conf_org, self.conf_pssm["MAX_COLUMNS"])
-            child2 = OrganismObject(self.get_id(), self.conf_org, self.conf_pssm["MAX_COLUMNS"])
-            
-            # decide how the split is handled
-            if random.random() < 0.5:
-                # First parent keeps the broken connector in the LEFT chunk
-                L1, R1 = parent1.break_chain(index_1, "left")
-    
-                if random.random() < 0.5:
-                    # Second parent keeps the broken connector in the LEFT chunk
-                    L2, R2 = parent2.break_chain(index_2, "left")
+        if random.random() < self.recombination_probability:
+            parent1recogs = parent1.count_recognizers()
+            parent2recogs = parent2.count_recognizers()
+
+           # if none of the organisms are single-recognizer organissm
+            if parent1recogs != 1 and parent2recogs != 1:
+                # Select one connector in each parent for the split
+                index_1 = parent1.get_random_connector()
+                index_2 = parent2.get_random_connector()
                 
-                    # Recombination: case 1 (left, left)
-                    # Child 1 is (L1 + R2)
-                    child1_reco = L1["recognizers"] + R2["recognizers"]
-                    child1_conn = L1["connectors"] + R2["connectors"]
+                # Instantiate children organisms
+                 child1 = OrganismObject(self.get_id(), self.conf_org, self.conf_pssm["MAX_COLUMNS"])
+                 child2 = OrganismObject(self.get_id(), self.conf_org, self.conf_pssm["MAX_COLUMNS"])
+             
+                # decide how the split is handled
+                if random.random() < 0.5:
+                    # First parent keeps the broken connector in the LEFT chunk
+                    L1, R1 = parent1.break_chain(index_1, "left")
         
-                    # determine similarity of children to parents, based on 
-                    # fraction of parent asigned to child
-                    child1_prnt1_fraction = len(L1["recognizers"]) \
-                                            / float(parent1.count_recognizers())
-                    child1_prnt2_fraction = len(R2["recognizers"]) \
-                                            / float(parent2.count_recognizers())
-    
-                    # Child 2 is (L2 + R1)
-                    child2_reco = L2["recognizers"] + R1["recognizers"]
-                    child2_conn = L2["connectors"] + R1["connectors"]
-    
-                    # determine similarity of children to parents, based on 
-                    # fraction of parent asigned to child
-                    child2_prnt1_fraction = len(R1["recognizers"]) \
-                                            / float(parent1.count_recognizers())
-                    child2_prnt2_fraction = len(L2["recognizers"]) \
-                                            / float(parent2.count_recognizers())                
-    
+                    if random.random() < 0.5:
+                        # Second parent keeps the broken connector in the LEFT chunk
+                        L2, R2 = parent2.break_chain(index_2, "left")
+                    
+                        # Recombination: case 1 (left, left)
+                        # Child 1 is (L1 + R2)
+                        child1_reco = L1["recognizers"] + R2["recognizers"]
+                        child1_conn = L1["connectors"] + R2["connectors"]
+            
+                        # # determine similarity of children to parents, based on 
+                        # # fraction of parent asigned to child
+                        # child1_prnt1_fraction = len(L1["recognizers"]) \
+                        #                         / float(parent1.count_recognizers())
+                        # child1_prnt2_fraction = len(R2["recognizers"]) \
+                        #                         / float(parent2.count_recognizers())
+        
+                        # Child 2 is (L2 + R1)
+                        child2_reco = L2["recognizers"] + R1["recognizers"]
+                        child2_conn = L2["connectors"] + R1["connectors"]
+        
+                        # # determine similarity of children to parents, based on 
+                        # # fraction of parent asigned to child
+                        # child2_prnt1_fraction = len(R1["recognizers"]) \
+                        #                         / float(parent1.count_recognizers())
+                        # child2_prnt2_fraction = len(L2["recognizers"]) \
+                        #                         / float(parent2.count_recognizers())                
+        
+                    else:
+                        # Second parent keeps the broken connector in the RIGHT chunk
+                        L2, R2 = parent2.break_chain(index_2, "right")
+                    
+                        # Recombination: case 2 (left, right)
+                        # Child 1 is (L1 + L2)
+                        child1_reco = L1["recognizers"] + L2["recognizers"]
+                        child1_conn = L1["connectors"] + L2["connectors"]
+                        # # determine similarity of children to parents, based on 
+                        # # fraction of parent asigned to child
+                        # child1_prnt1_fraction = len(L1["recognizers"]) \
+                        #                         / float(parent1.count_recognizers())
+                        # child1_prnt2_fraction = len(L2["recognizers"]) \
+                        #                         / float(parent2.count_recognizers())
+                        # Child 2 is (R1 + R2)
+                        child2_reco = R1["recognizers"] + R2["recognizers"]
+                        child2_conn = R1["connectors"] + R2["connectors"]
+                        # # determine similarity of children to parents, based on 
+                        # # fraction of parent asigned to child
+                        # child2_prnt1_fraction = len(R1["recognizers"]) \
+                        #                         / float(parent1.count_recognizers())
+                        # child2_prnt2_fraction = len(R2["recognizers"]) \
+                        #                         / float(parent2.count_recognizers())                 
                 else:
-                    # Second parent keeps the broken connector in the RIGHT chunk
-                    L2, R2 = parent2.break_chain(index_2, "right")
+                    # First parent keeps the broken connector in the RIGHT chunk
+                    L1, R1 = parent1.break_chain(index_1, "right")
+                    
+                    if random.random() < 0.5:
+                        # Second parent keeps the broken connector in the LEFT chunk
+                        L2, R2 = parent2.break_chain(index_2, "left")
+                    
+                        # Recombination: case 3 (right, left)
+                        # Child 1 is (L2 + L1)
+                        child1_reco = L2["recognizers"] + L1["recognizers"]
+                        child1_conn = L2["connectors"] + L1["connectors"]
+                        # # determine similarity of children to parents, based on 
+                        # # fraction of parent asigned to child
+                        # child1_prnt1_fraction = len(L1["recognizers"]) \
+                        #                         / float(parent1.count_recognizers())
+                        # child1_prnt2_fraction = len(L2["recognizers"]) \
+                        #                         / float(parent2.count_recognizers())
+                        # Child 2 is (R2 + R1)
+                        child2_reco = R2["recognizers"] + R1["recognizers"]
+                        child2_conn = R2["connectors"] + R1["connectors"]
+                        # # determine similarity of children to parents, based on 
+                        # # fraction of parent asigned to child
+                        # child2_prnt1_fraction = len(R1["recognizers"]) \
+                        #                         / float(parent1.count_recognizers())
+                        # child2_prnt2_fraction = len(R2["recognizers"]) \
+                        #                         / float(parent2.count_recognizers())                 
+                    
+                    else:
+                        # Second parent keeps the broken connector in the RIGHT chunk
+                        L2, R2 = parent2.break_chain(index_2, "right")
+                    
+                        # Recombination: case 4 (right, right)
+                        # Child 1 is (L1 + R2)
+                        child1_reco = L1["recognizers"] + R2["recognizers"]
+                        child1_conn = L1["connectors"] + R2["connectors"]
+                        # # determine similarity of children to parents, based on 
+                        # # fraction of parent asigned to child
+                        # child1_prnt1_fraction = len(L1["recognizers"]) \
+                        #                         / float(parent1.count_recognizers())
+                        # child1_prnt2_fraction = len(R2["recognizers"]) \
+                        #                         / float(parent2.count_recognizers())
+                        # Child 2 is (L2 + R1)
+                        child2_reco = L2["recognizers"] + R1["recognizers"]
+                        child2_conn = L2["connectors"] + R1["connectors"]
+                        # # determine similarity of children to parents, based on 
+                        # # fraction of parent asigned to child
+                        # child2_prnt1_fraction = len(R1["recognizers"]) \
+                        #                         / float(parent1.count_recognizers())
+                        # child2_prnt2_fraction = len(L2["recognizers"]) \
+                        #                         / float(parent2.count_recognizers())                 
+
+                # Set child1 recognizers and connectors
+                child1.set_recognizers(child1_reco)
+                child1.set_connectors(child1_conn)
                 
-                    # Recombination: case 2 (left, right)
-                    # Child 1 is (L1 + L2)
-                    child1_reco = L1["recognizers"] + L2["recognizers"]
-                    child1_conn = L1["connectors"] + L2["connectors"]
-                    # determine similarity of children to parents, based on 
-                    # fraction of parent asigned to child
-                    child1_prnt1_fraction = len(L1["recognizers"]) \
-                                            / float(parent1.count_recognizers())
-                    child1_prnt2_fraction = len(L2["recognizers"]) \
-                                            / float(parent2.count_recognizers())
-                    # Child 2 is (R1 + R2)
-                    child2_reco = R1["recognizers"] + R2["recognizers"]
-                    child2_conn = R1["connectors"] + R2["connectors"]
-                    # determine similarity of children to parents, based on 
-                    # fraction of parent asigned to child
-                    child2_prnt1_fraction = len(R1["recognizers"]) \
-                                            / float(parent1.count_recognizers())
-                    child2_prnt2_fraction = len(R2["recognizers"]) \
-                                            / float(parent2.count_recognizers())                 
+                # Set child2 recognizers and connectors
+                child2.set_recognizers(child2_reco)
+                child2.set_connectors(child2_conn)
+                
+                # Set attribute that will map organism nodes to alignment matrix rows
+                child1.set_row_to_pssm()
+                child2.set_row_to_pssm()
+                                                
+            # if one of the two organisms is a single-recognizer organism
             else:
-                # First parent keeps the broken connector in the RIGHT chunk
-                L1, R1 = parent1.break_chain(index_1, "right")
-                
-                if random.random() < 0.5:
-                    # Second parent keeps the broken connector in the LEFT chunk
-                    L2, R2 = parent2.break_chain(index_2, "left")
-                
-                    # Recombination: case 3 (right, left)
-                    # Child 1 is (L2 + L1)
-                    child1_reco = L2["recognizers"] + L1["recognizers"]
-                    child1_conn = L2["connectors"] + L1["connectors"]
-                    # determine similarity of children to parents, based on 
-                    # fraction of parent asigned to child
-                    child1_prnt1_fraction = len(L1["recognizers"]) \
-                                            / float(parent1.count_recognizers())
-                    child1_prnt2_fraction = len(L2["recognizers"]) \
-                                            / float(parent2.count_recognizers())
-                    # Child 2 is (R2 + R1)
-                    child2_reco = R2["recognizers"] + R1["recognizers"]
-                    child2_conn = R2["connectors"] + R1["connectors"]
-                    # determine similarity of children to parents, based on 
-                    # fraction of parent asigned to child
-                    child2_prnt1_fraction = len(R1["recognizers"]) \
-                                            / float(parent1.count_recognizers())
-                    child2_prnt2_fraction = len(R2["recognizers"]) \
-                                            / float(parent2.count_recognizers())                 
-                
+                # Create the 2 children and assign new IDs
+                child1 = copy.deepcopy(parent1)
+                child2 = copy.deepcopy(parent2)
+                # Assign IDs to organisms and increase factory counter
+                child1.set_id(self.get_id())
+                child2.set_id(self.get_id())
+
+                # determine single-pssm organism
+                if parent1recogs == 1:
+                    # get random RECOGNIZER index from other child
+                    index_2 = child2.get_random_recognizer()
+                    # get recognizer at that position
+                    temp = child2.recognizers[index_2]
+                    # assign single node to that position in parent 1
+                    child2.recognizers[index_2] = child1.recognizers[0]
+                    # child 1 takes the random child2 recognizer
+                    child1.recognizers[0] = temp
+                    # # assign similarities
+                    # child1_prnt1_fraction = 1   # we force single-nodes to have 100% identity
+                    # child1_prnt2_fraction = 0   # with their "real", deep-copy parent
+                    # child2_prnt1_fraction = 0   # so that they will compete with similar-sized orgs
+                    # child2_prnt2_fraction = 1
+               
+                # single-node org is child 2
                 else:
-                    # Second parent keeps the broken connector in the RIGHT chunk
-                    L2, R2 = parent2.break_chain(index_2, "right")
-                
-                    # Recombination: case 4 (right, right)
-                    # Child 1 is (L1 + R2)
-                    child1_reco = L1["recognizers"] + R2["recognizers"]
-                    child1_conn = L1["connectors"] + R2["connectors"]
-                    # determine similarity of children to parents, based on 
-                    # fraction of parent asigned to child
-                    child1_prnt1_fraction = len(L1["recognizers"]) \
-                                            / float(parent1.count_recognizers())
-                    child1_prnt2_fraction = len(R2["recognizers"]) \
-                                            / float(parent2.count_recognizers())
-                    # Child 2 is (L2 + R1)
-                    child2_reco = L2["recognizers"] + R1["recognizers"]
-                    child2_conn = L2["connectors"] + R1["connectors"]
-                    # determine similarity of children to parents, based on 
-                    # fraction of parent asigned to child
-                    child2_prnt1_fraction = len(R1["recognizers"]) \
-                                            / float(parent1.count_recognizers())
-                    child2_prnt2_fraction = len(L2["recognizers"]) \
-                                            / float(parent2.count_recognizers())                 
-            
-            # Set child1 recognizers and connectors
-            child1.set_recognizers(child1_reco)
-            child1.set_connectors(child1_conn)
-            
-            # Set child2 recognizers and connectors
-            child2.set_recognizers(child2_reco)
-            child2.set_connectors(child2_conn)
-            
-            # Set attribute that will map organism nodes to alignment matrix rows
-            child1.set_row_to_pssm()
-            child2.set_row_to_pssm()
+                    # get random RECOGNIZER index from other child
+                    index_1 = child1.get_random_recognizer()
+                    # get recognizer at that position
+                    temp = child1.recognizers[index_1]
+                    # assign single node to that position in parent 1
+                    child1.recognizers[index_1] = child2.recognizers[0]
+                    # child 1 takes the random child2 recognizer
+                    child2.recognizers[0] = temp
+                    # # assign similarities
+                    # child2_prnt1_fraction = 0  # we force single-nodes to have 100% identity
+                    # child2_prnt2_fraction = 1  
+                    # child1_prnt2_fraction = 1 
+                    # child1_prnt1_fraction = 0
+                    
+                # Set attribute that will map organism nodes to alignment matrix rows
+                child1.set_row_to_pssm()
+                child2.set_row_to_pssm()                       
+
     
-            # set similarity
-            # dictionary with an organism and similarities to each parent
-            # similatiries are computed as the number of nodes shared  between
-            # each parent and child
-            child_1_plus_sims = {
-                "sim_org_1": child1_prnt1_fraction,
-                "sim_org_2": child1_prnt2_fraction,
-                "child": child1,
-            }                
-            child_2_plus_sims = {
-                "sim_org_1": child2_prnt1_fraction,
-                "sim_org_2": child2_prnt2_fraction,
-                "child": child2,
-            }
+            # # set similarity
+            # # dictionary with an organism and similarities to each parent
+            # # similatiries are computed as the number of nodes shared  between
+            # # each parent and child
+            # child_1_plus_sims = {
+            #     "sim_org_1": child1_prnt1_fraction,
+            #     "sim_org_2": child1_prnt2_fraction,
+            #     "child": child1,
+            # }                
+            # child_2_plus_sims = {
+            #     "sim_org_1": child2_prnt1_fraction,
+            #     "sim_org_2": child2_prnt2_fraction,
+            #     "child": child2,
+            # }
         # no recombination case                  
         else:
             # Create the 2 children and assign new IDs
@@ -426,21 +482,22 @@ class OrganismFactory:
             child1.set_id(self.get_id())
             child2.set_id(self.get_id())
 
-            # If children are not recombined, return the same organisms and their
-            # similarities
-            child_1_plus_sims = {
-                "sim_org_1": 1,  # Equal to organism 1
-                "sim_org_2": 0,
-                "child": child1,
-            }
+            # # If children are not recombined, return the same organisms and their
+            # # similarities
+            # child_1_plus_sims = {
+            #     "sim_org_1": 1,  # Equal to organism 1
+            #     "sim_org_2": 0,
+            #     "child": child1,
+            # }
     
-            child_2_plus_sims = {
-                "sim_org_1": 0,
-                "sim_org_2": 1,  # Equal to organism2
-                "child": child2,
-            }
+            # child_2_plus_sims = {
+            #     "sim_org_1": 0,
+            #     "sim_org_2": 1,  # Equal to organism2
+            #     "child": child2,
+            # }
             
-        return {"child1": child_1_plus_sims, "child2": child_2_plus_sims}
+        # return {"child1": child_1_plus_sims, "child2": child_2_plus_sims}
+        return [child1, child2]
 
     def import_organisms(self, file_name: str) -> list:
         """Import Organisms from file
