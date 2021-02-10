@@ -86,6 +86,8 @@ results = example_organism2.get_placement(example_dna_seq3, print_out = True)
 
 example_organism2.get_seq_fitness(example_dna_seq3, print_out = True)
 
+print(example_organism2.print_result(example_dna_seq3))
+
 results["energy"]
 results["recognizers_scores"]
 results["connectors_scores"]
