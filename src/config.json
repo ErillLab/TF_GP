@@ -55,6 +55,8 @@
     "MUTATE_PROBABILITY_SWAP":0.2,
     "MUTATE_VARIANCE_SIGMA":5,
     "MUTATE_VARIANCE_MU":5,
+    "SIGMA_MUTATOR":"log",
+    "MU_MUTATOR":"linear",
     "EXPECTED_SEQ_LENGTH" : 250
   },
   "pssm": {

@@ -74,6 +74,8 @@ class ConnectorObject():
         self.mutate_variance_sigma = config["MUTATE_VARIANCE_SIGMA"]
         self.mutate_variance_mu = config["MUTATE_VARIANCE_MU"]
         self.expected_seq_length = config["EXPECTED_SEQ_LENGTH"]
+        self.sigma_mutator = config["SIGMA_MUTATOR"] #log or linear
+        self.mu_mutator = config["MU_MUTATOR"] #log or linear
         
         # precompute connector energies for expected length range
         self.stored_pdfs = []
@@ -117,31 +119,38 @@ class ConnectorObject():
         
         # LINEAR SIGMA MUTATION
         if random.random() < self.mutate_probability_sigma:
-            # Update sigma with a random permutation within allowed interval
-            self._sigma = abs(
-                self._sigma + random.uniform(-self.mutate_variance_sigma,
-                                             self.mutate_variance_sigma)
-            )
- 
-        '''
-        # LOGARITHMIC SIGMA MUTATION
-        if random.random() < self.mutate_probability_sigma:
-            base = self.mutate_variance_sigma
-            logb_sigma = np.log(self._sigma) / np.log(base)
-            shift = random.uniform(-1, 1)
-            # Apply a shift in the range (-1, 1) to the log-sigma
-            logb_sigma += shift
-            new_sigma = base**logb_sigma
-            self._sigma = new_sigma
-        '''
-        
+            #determine type of mutation (linear or log)
+            if self.sigma_mutator=="linear":
+                # Update sigma with a random permutation within allowed interval
+                self._sigma = abs(
+                    self._sigma + random.uniform(-self.mutate_variance_sigma,
+                                                 self.mutate_variance_sigma)
+                )
+            else:
+                base = self.mutate_variance_sigma
+                logb_sigma = np.log(self._sigma) / np.log(base)
+                shift = random.uniform(-1, 1)
+                # Apply a shift in the range (-1, 1) to the log-sigma
+                logb_sigma += shift
+                self._sigma = base**logb_sigma
+                
+       
         # LINEAR MU MUTATION
         if random.random() < self.mutate_probability_mu:
-            # Update mu with a random permutation within allowed interval
-            self._mu = abs(
-                self._mu + random.uniform(-self.mutate_variance_mu,
-                                          self.mutate_variance_mu)
-            )
+            #determine type of mutation (linear or log)
+            if self.sigma_mutator=="linear":
+                # Update mu with a random permutation within allowed interval
+                self._mu = abs(
+                    self._mu + random.uniform(-self.mutate_variance_mu,
+                                              self.mutate_variance_mu)
+                )
+            else:
+                base = self.mutate_variance_mu
+                logb_mu = np.log(self._mu) / np.log(base)
+                shift = random.uniform(-1, 1)
+                # Apply a shift in the range (-1, 1) to the log-sigma
+                logb_mu += shift
+                self._mu = base**logb_mu
 
     # pylint: enable=W0613
 
