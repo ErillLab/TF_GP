@@ -471,7 +471,7 @@ class OrganismObject:
         # Mutate nodes
         # If MUTATE_PROBABILITY_NODE_MUTATION is set to real value, a single
         # node is selected. If set to null, all nodes are mutated
-        if mutate_probability_node_mutation:
+        if self.mutate_probability_node_mutation:
             # Mutate a random node
             if random.random() < self.mutate_probability_node_mutation:
     
