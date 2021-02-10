@@ -99,8 +99,11 @@ class OrganismObject:
         # type of indel operator: 
         # - blind (preserves connectors)
         # - intelligent (merges connectors) 
-        self.indel_method = conf[
-            "INDEL_METHOD"
+        self.insertion_method = conf[
+            "INSERTION_METHOD"
+        ]
+        self.deletion_method = conf[
+            "DELETION_METHOD"
         ]
 	
         #probability of deleting/inserting a recognizer
@@ -194,7 +197,7 @@ class OrganismObject:
             # if this is a single-node organism, skip deletion
             if n_recognizers != 1:
     			# "blind" method: the remaining connector is left unchanged
-                if self.indel_method == "blind":
+                if self.deletion_method == "blind":
                     # Choose randomly the recognizer to be deleted
                     recognizer_idx = random.randint(0, n_recognizers - 1)
                     if recognizer_idx == 0:
@@ -230,7 +233,7 @@ class OrganismObject:
     			# "intelligent" method: a new connector is created merging
     			# the information of the right and left connectors for the
     			# recognizer targeted for deletion
-                if self.indel_method == "intelligent":
+                if self.deletion_method == "intelligent":
                     # Choose randomly the recognizer to be deleted
                     recognizer_idx = random.randint(0, n_recognizers - 1)
                     if recognizer_idx == 0:
@@ -307,7 +310,7 @@ class OrganismObject:
             
 			# "blind" method: one of the existing connectors is used
 			# (unchanged) to connect to the new recognizer
-            if self.indel_method == "blind":
+            if self.insertion_method == "blind":
                 
                 n_recognizers = self.count_recognizers()
                 # Choose randomly the recognizer next to which the insertion
@@ -345,7 +348,7 @@ class OrganismObject:
 			# "averaged" so that their mu and sigma are "equivalent" to
 			# to the connector previously occupying the position where
 			# the new recognizer has been inserted
-            if self.indel_method == "intelligent":
+            if self.insertion_method == "intelligent":
                 
                 n_recognizers = self.count_recognizers()
                 # Choose randomly the recognizer next to which the insertion
