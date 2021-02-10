@@ -468,18 +468,27 @@ class OrganismObject:
                 self.recognizers = new_recognizers
                 self.connectors = new_connectors
         
-        # Mutate a random node
-        if random.random() < self.mutate_probability_node_mutation:
-
-            n_nodes = self.count_nodes()
-            random_node_idx = random.randint(0, n_nodes - 1)
-            if random_node_idx < self.count_recognizers():
-                # mutate a recognizer
-                self.recognizers[random_node_idx].mutate(org_factory)
-            else:
-                # mutate a connector
-                connector_idx = random_node_idx - self.count_recognizers()
-                self.connectors[connector_idx].mutate(org_factory)
+        # Mutate nodes
+        # If MUTATE_PROBABILITY_NODE_MUTATION is set to real value, a single
+        # node is selected. If set to null, all nodes are mutated
+        if mutate_probability_node_mutation:
+            # Mutate a random node
+            if random.random() < self.mutate_probability_node_mutation:
+    
+                n_nodes = self.count_nodes()
+                random_node_idx = random.randint(0, n_nodes - 1)
+                if random_node_idx < self.count_recognizers():
+                    # mutate a recognizer
+                    self.recognizers[random_node_idx].mutate(org_factory)
+                else:
+                    # mutate a connector
+                    connector_idx = random_node_idx - self.count_recognizers()
+                    self.connectors[connector_idx].mutate(org_factory)
+        else:
+            for recognizer in self.recognizers:
+                recognizer.mutate(org_factory)
+            for connector in self.connectors:
+                connector.mutate(org_factory)
         
         # no matter what mutation is applied, order/columns/number of pssm's
         # may have changed, so we call the set_row_to_pssm to set their mapping
