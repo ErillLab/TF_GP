@@ -8,10 +8,10 @@
     "RESULT_TEST_BASE_PATH_DIR": "resultsTEST/",
     "POSITIVE_FILENAME":"positive_dataset_7_50.fas",
     "NEGATIVE_FILENAME":"positive_dataset_7_100pc5.fas",
-    "INPUT_FILENAME":"test_organisms_d2.json",
+    "INPUT_FILENAME":"super_duper_new_test.json",
     "OUTPUT_FILENAME":"output.txt",
-    "MAX_SEQUENCES_TO_FIT_POS":25,
-    "MAX_SEQUENCES_TO_FIT_NEG":50,
+    "MAX_SEQUENCES_TO_FIT_POS":35,
+    "MAX_SEQUENCES_TO_FIT_NEG":35,
     "FITNESS_FUNCTION": "discriminative",
     "USE_GINI": null,
     "GENOME_LENGTH": 4600000,
@@ -25,7 +25,7 @@
    },
 
   "organism": {
-    "CUMULATIVE_FIT_METHOD":"median",
+    "CUMULATIVE_FIT_METHOD":"mean",
     "ENERGY_THRESHOLD_METHOD":"organism",
     "ENERGY_THRESHOLD_PARAM":0,
     "INSERTION_METHOD":"intelligent",

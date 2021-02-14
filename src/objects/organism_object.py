@@ -748,6 +748,10 @@ class OrganismObject:
         elif self.cumulative_fit_method == "mean":
             # Compute fitness score as average positive score
             score = np.mean(scores)
+            
+        elif self.cumulative_fit_method == "median":
+            # Compute fitness score as median positive score
+            score = np.median(scores)
         
         # Compute the average Gini coefficient as the geometric mean
         if len(ginis) == 0:  # Case where no gini is requested
