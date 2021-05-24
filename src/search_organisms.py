@@ -242,21 +242,42 @@ def main():
                 if FITNESS_FUNCTION == "boltzmannian":
                     performance1 = first_organism.get_boltz_fitness(positive_dataset[:MAX_SEQUENCES_TO_FIT_POS],
                                                                     negative_dataset[:MAX_SEQUENCES_TO_FIT_NEG],
-                                                                    GENOME_LENGTH, traceback=True, 
-                                                                    print_out = False, use_gini=True)
+                                                                    GENOME_LENGTH, traceback=False, 
+                                                                    print_out = False, use_gini=False)
                     fitness1 = performance1["score"]
                     gini1 = performance1["avg_gini"]
                     
                     performance2 = second_organism.get_boltz_fitness(positive_dataset[:MAX_SEQUENCES_TO_FIT_POS],
                                                                      negative_dataset[:MAX_SEQUENCES_TO_FIT_NEG],
-                                                                     GENOME_LENGTH, traceback=True, 
-                                                                     print_out = False, use_gini=True)
+                                                                     GENOME_LENGTH, traceback=False, 
+                                                                     print_out = False, use_gini=False)
                     fitness2 = performance2["score"]
                     gini2 = performance2["avg_gini"]
                     
                     fitness1 = round(fitness1, 8)
                     fitness2 = round(fitness2, 8)
                 
+                # Kolmogorov fitness
+                # Computes Kolmogorov-Smirnov test on positive/negative set scores
+                elif FITNESS_FUNCTION == "kolmogorov":
+                    performance1 = first_organism.get_kolmogorov_fitness(positive_dataset[:MAX_SEQUENCES_TO_FIT_POS],
+                                                                    negative_dataset[:MAX_SEQUENCES_TO_FIT_NEG],
+                                                                    traceback=False, print_out = False, 
+                                                                    use_gini=False)
+                    fitness1 = performance1["score"]
+                    gini1 = performance1["avg_gini"]                   
+                    
+                    performance2 = second_organism.get_kolmogorov_fitness(positive_dataset[:MAX_SEQUENCES_TO_FIT_POS],
+                                                                    negative_dataset[:MAX_SEQUENCES_TO_FIT_NEG],
+                                                                    traceback=False, print_out = False, 
+                                                                    use_gini=False)
+
+                    fitness2 = performance2["score"]
+                    gini2 = performance2["avg_gini"]
+                    
+                    fitness1 = round(fitness1, 8)
+                    fitness2 = round(fitness2, 8)
+
                 # Discriminative fitness
                 elif FITNESS_FUNCTION == "discriminative":
                     positive_performance1 = first_organism.get_additive_fitness(positive_dataset[:MAX_SEQUENCES_TO_FIT_POS],

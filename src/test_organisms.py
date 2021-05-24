@@ -61,21 +61,35 @@ def main():
                                              genome_length, traceback=True, 
                                              print_out = False, use_gini=True)
         boltz_fitness = performance1["score"]
-        
+
         # Gini coefficient
         gini_coeff = performance1["avg_gini"]
+        
+        # Kolmogorov fitness
+        performance1 = org.get_kolmogorov_fitness(positive_dataset[:max_sequences_to_fit_pos],
+                                             negative_dataset[:max_sequences_to_fit_neg],
+                                             traceback=False, 
+                                             print_out = False, use_gini=False)
+        kolm_fitness = performance1["score"]
+                
+        
+
         
         # print("Boltzmann --- %s seconds ---" % (time.time() - start_time))
         
         # start_time = time.time()
         # Discriminative fitness
-        P = org.get_additive_fitness(positive_dataset[:max_sequences_to_fit_pos],
+        Pf = org.get_additive_fitness(positive_dataset[:max_sequences_to_fit_pos],
                                      traceback=False, print_out = False, 
-                                     use_gini=False)["score"]
+                                     use_gini=False)
+        P = Pf["score"]
+        Pstd = Pf["stdev"]
         
-        N = org.get_additive_fitness(negative_dataset[:max_sequences_to_fit_neg],
+        Nf = org.get_additive_fitness(negative_dataset[:max_sequences_to_fit_neg],
                                      traceback=False, print_out = False, 
-                                     use_gini=False)["score"]
+                                     use_gini=False)
+        N = Nf["score"]
+        Nstd = Nf["stdev"]
         
         discr_fitness =  P - N
         # print("Additive --- %s seconds ---" % (time.time() - start_time))
@@ -83,16 +97,19 @@ def main():
         # print out results (fitness, nodes, Gini, etc.) for organism
         print(
             (
-                "Org {} Nodes: {:.2f} GiniPSSMs: {:.2f} P: {:.2f} N: {:.2f}"
-                + " DiscrF: {:.2f} BoltzF: {:.2f}\n"
+                "Org {} Nodes: {:.2f} GiniPSSMs: {:.2f} P: {:.2f}(+/-){:.2f} N: {:.2f}(+/-){:.2f}"
+                + " DiscrF: {:.2f} BoltzF: {:.2f} KolmF: {:.2f}\n"
             ).format(
                 org._id,  # "Org"
                 nodes,  # "Nodes"
                 gini_coeff, # GiniPSSMs
                 P,  # "P"
+                Pstd, # stdev for P
                 N,  # "N"
+                Nstd, # stdev for N
                 discr_fitness,  # "DiscrF"
                 boltz_fitness,  # "BoltzF"
+                kolm_fitness    # "KolmF"
                 )
         )
         
