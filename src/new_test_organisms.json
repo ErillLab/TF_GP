@@ -1,0 +1,592 @@
+[
+  [
+    {
+	  "objectType": "descriptor",
+      "name" : "loc_opt",
+	  "description" : "evolved organism with two recognizers, targetting CTGT and GTTC, with 35+/-4 bp connector; has two additional non-functional elements"
+	},
+    {
+      "objectType": "pssm",
+      "pwm": [
+        {
+          "a": 0.25,
+          "g": 0.05,
+          "c": 0.4,
+          "t": 0.3
+        },
+        {
+          "a": 0.15,
+          "g": 0.15,
+          "c": 0.45,
+          "t": 0.25
+        },
+        {
+          "a": 0.1,
+          "g": 0.0,
+          "c": 0.65,
+          "t": 0.25
+        },
+        {
+          "a": 0.05,
+          "g": 0.35,
+          "c": 0.2,
+          "t": 0.4
+        }
+      ]
+    },
+    {
+      "objectType": "connector",
+      "mu": 31.375972136853733,
+      "sigma": 8.566338545915515
+    },
+    {
+      "objectType": "pssm",
+      "pwm": [
+        {
+          "a": 0.0,
+          "g": 0.0,
+          "c": 1.0,
+          "t": 0.0
+        },
+        {
+          "a": 0.0,
+          "g": 0.0,
+          "c": 0.05,
+          "t": 0.95
+        },
+        {
+          "a": 0.0,
+          "g": 0.55,
+          "c": 0.0,
+          "t": 0.45
+        },
+        {
+          "a": 0.0,
+          "g": 0.15,
+          "c": 0.0,
+          "t": 0.85
+        }
+      ]
+    },
+    {
+      "objectType": "connector",
+      "mu": 35.988147427401486,
+      "sigma": 4.78530601561066
+    },
+    {
+      "objectType": "pssm",
+      "pwm": [
+        {
+          "a": 0.0,
+          "g": 0.0,
+          "c": 0.15,
+          "t": 0.85
+        },
+        {
+          "a": 0.0,
+          "g": 1.0,
+          "c": 0.0,
+          "t": 0.0
+        },
+        {
+          "a": 0.0,
+          "g": 0.0,
+          "c": 0.55,
+          "t": 0.45
+        },
+        {
+          "a": 0.0,
+          "g": 0.05,
+          "c": 0.0,
+          "t": 0.95
+        }
+      ]
+    },
+    {
+      "objectType": "connector",
+      "mu": 8.458714609514695,
+      "sigma": 53.83285613765629
+    },
+    {
+      "objectType": "pssm",
+      "pwm": [
+        {
+          "a": 0.1,
+          "g": 0.1,
+          "c": 0.4,
+          "t": 0.4
+        },
+        {
+          "a": 0.0,
+          "g": 0.0,
+          "c": 0.1,
+          "t": 0.9
+        },
+        {
+          "a": 0.45,
+          "g": 0.55,
+          "c": 0.0,
+          "t": 0.0
+        },
+        {
+          "a": 0.0,
+          "g": 0.1,
+          "c": 0.0,
+          "t": 0.9
+        }
+      ]
+    }
+  ],
+  [
+    {
+	  "objectType": "descriptor",
+	  "name" : "perf_sol",
+	  "description" : "evolved organism with an almost perfect solution acTG (25+/-45) aCAG (2+/-18) GTtC; some zero freqs"
+	},
+    {
+      "objectType": "pssm",
+      "pwm": [
+        {
+          "a": 0.6,
+          "g": 0.25,
+          "c": 0.1,
+          "t": 0.05
+        },
+        {
+          "a": 0.05,
+          "g": 0.0,
+          "c": 0.7,
+          "t": 0.25
+        },
+        {
+          "a": 0.05,
+          "g": 0.0,
+          "c": 0.0,
+          "t": 0.95
+        },
+        {
+          "a": 0.0,
+          "g": 0.9,
+          "c": 0.1,
+          "t": 0.0
+        }
+      ]
+    },
+    {
+      "objectType": "connector",
+      "mu": 25.057953388379907,
+      "sigma": 45.48651552139989
+    },
+    {
+      "objectType": "pssm",
+      "pwm": [
+        {
+          "a": 0.55,
+          "g": 0.4,
+          "c": 0.0,
+          "t": 0.05
+        },
+        {
+          "a": 0.0,
+          "g": 0.0,
+          "c": 1.0,
+          "t": 0.0
+        },
+        {
+          "a": 0.9,
+          "g": 0.1,
+          "c": 0.0,
+          "t": 0.0
+        },
+        {
+          "a": 0.1,
+          "g": 0.85,
+          "c": 0.05,
+          "t": 0.0
+        }
+      ]
+    },
+    {
+      "objectType": "connector",
+      "mu": 2,
+      "sigma": 18.404201670451524
+    },
+    {
+      "objectType": "pssm",
+      "pwm": [
+        {
+          "a": 0.0,
+          "g": 1.0,
+          "c": 0.0,
+          "t": 0.0
+        },
+        {
+          "a": 0.1,
+          "g": 0.0,
+          "c": 0.0,
+          "t": 0.9
+        },
+        {
+          "a": 0.1,
+          "g": 0.2,
+          "c": 0.05,
+          "t": 0.65
+        },
+        {
+          "a": 0.1,
+          "g": 0.05,
+          "c": 0.85,
+          "t": 0.0
+        }
+      ]
+    }
+  ],
+  [
+    {
+	  "objectType": "descriptor",
+	  "name" : "model",
+	  "description" : "designed organism with <<perfect>> solution CTGt (9+/-2.5) aCAG (22+/-2.5) GTTC; NO zero freqs"
+	},  
+    {
+      "objectType": "pssm",
+      "pwm": [
+        {
+          "a": 0.05,
+          "g": 0.05,
+          "c": 0.8,
+          "t": 0.1
+        },
+        {
+          "a": 0.05,
+          "g": 0.05,
+          "c": 0.1,
+          "t": 0.8
+        },
+        {
+          "a": 0.05,
+          "g": 0.8,
+          "c": 0.05,
+          "t": 0.1
+        },
+        {
+          "a": 0.1,
+          "g": 0.1,
+          "c": 0.1,
+          "t": 0.7
+        }
+      ]
+    },
+    {
+      "objectType": "connector",
+      "mu": 9.0,
+      "sigma": 2.5
+    },
+    {
+      "objectType": "pssm",
+      "pwm": [
+        {
+          "a": 0.6,
+          "g": 0.3,
+          "c": 0.05,
+          "t": 0.05
+        },
+        {
+          "a": 0.03,
+          "g": 0.03,
+          "c": 0.9,
+          "t": 0.04
+        },
+        {
+          "a": 0.9,
+          "g": 0.06,
+          "c": 0.02,
+          "t": 0.02
+        },
+        {
+          "a": 0.1,
+          "g": 0.85,
+          "c": 0.04,
+          "t": 0.01
+        }
+      ]
+    },
+    {
+      "objectType": "connector",
+      "mu": 22,
+      "sigma": 2.5
+    },
+    {
+      "objectType": "pssm",
+      "pwm": [
+        {
+          "a": 0.02,
+          "g": 0.94,
+          "c": 0.02,
+          "t": 0.02
+        },
+        {
+          "a": 0.06,
+          "g": 0.02,
+          "c": 0.02,
+          "t": 0.9
+        },
+        {
+          "a": 0.05,
+          "g": 0.05,
+          "c": 0.05,
+          "t": 0.85
+        },
+        {
+          "a": 0.05,
+          "g": 0.05,
+          "c": 0.85,
+          "t": 0.05
+        }
+      ]
+    }
+  ],
+  [
+    {
+	  "objectType": "descriptor",
+	  "name" : "hyped",
+	  "description" : "designed organism with <<perfect>> solution CTGt (9+/-2.5) aCAG (22+/-2.5) GTTC; all ZERO freqs"
+	},
+    {
+      "objectType": "pssm",
+      "pwm": [
+        {
+          "a": 0.0,
+          "g": 0.0,
+          "c": 1.0,
+          "t": 0.0
+        },
+        {
+          "a": 0.0,
+          "g": 0.0,
+          "c": 0.0,
+          "t": 1.0
+        },
+        {
+          "a": 0.0,
+          "g": 1.0,
+          "c": 0.0,
+          "t": 0.0
+        },
+        {
+          "a": 0.0,
+          "g": 0.0,
+          "c": 0.0,
+          "t": 1.0
+        }
+      ]
+    },
+    {
+      "objectType": "connector",
+      "mu": 9.0,
+      "sigma": 2.5
+    },
+    {
+      "objectType": "pssm",
+      "pwm": [
+        {
+          "a": 1.0,
+          "g": 0.0,
+          "c": 0.0,
+          "t": 0.0
+        },
+        {
+          "a": 0.0,
+          "g": 0.0,
+          "c": 1.0,
+          "t": 0.0
+        },
+        {
+          "a": 1.0,
+          "g": 0.0,
+          "c": 0.0,
+          "t": 0.0
+        },
+        {
+          "a": 0.0,
+          "g": 1.0,
+          "c": 0.0,
+          "t": 0.0
+        }
+      ]
+    },
+    {
+      "objectType": "connector",
+      "mu": 22,
+      "sigma": 2.5
+    },
+    {
+      "objectType": "pssm",
+      "pwm": [
+        {
+          "a": 0.0,
+          "g": 1.0,
+          "c": 0.0,
+          "t": 0.0
+        },
+        {
+          "a": 0.0,
+          "g": 0.0,
+          "c": 0.0,
+          "t": 1.0
+        },
+        {
+          "a": 0.0,
+          "g": 0.0,
+          "c": 0.0,
+          "t": 1.0
+        },
+        {
+          "a": 0.0,
+          "g": 0.0,
+          "c": 1.0,
+          "t": 0.0
+        }
+      ]
+    }
+  ],
+  [
+    {
+	  "objectType": "descriptor",
+	  "name" : "dloc_opt",
+	  "description" : "designed organism with two recognizers, targetting CTGT and GTTC, with 31+/-5.5 bp connector; NO zero frequencies; no additional nodes"
+	},
+    {
+      "objectType": "pssm",
+      "pwm": [
+        {
+          "a": 0.05,
+          "g": 0.05,
+          "c": 0.8,
+          "t": 0.1
+        },
+        {
+          "a": 0.05,
+          "g": 0.05,
+          "c": 0.1,
+          "t": 0.8
+        },
+        {
+          "a": 0.05,
+          "g": 0.8,
+          "c": 0.05,
+          "t": 0.1
+        },
+        {
+          "a": 0.1,
+          "g": 0.1,
+          "c": 0.1,
+          "t": 0.7
+        }
+      ]
+    },
+    {
+      "objectType": "connector",
+      "mu": 31.0,
+      "sigma": 5.5
+    },
+    {
+      "objectType": "pssm",
+      "pwm": [
+        {
+          "a": 0.02,
+          "g": 0.94,
+          "c": 0.02,
+          "t": 0.02
+        },
+        {
+          "a": 0.06,
+          "g": 0.02,
+          "c": 0.02,
+          "t": 0.9
+        },
+        {
+          "a": 0.05,
+          "g": 0.05,
+          "c": 0.05,
+          "t": 0.85
+        },
+        {
+          "a": 0.05,
+          "g": 0.05,
+          "c": 0.85,
+          "t": 0.05
+        }
+      ]
+    }
+  ],
+  [
+    {
+	  "objectType": "descriptor",
+	  "name" : "dloc_opt_loose",
+	  "description" : "designed organism with two recognizers, targetting CTGT and GTTC, with 31+/-20 bp connector; NO zero frequencies; no additional nodes"
+	},
+    {
+      "objectType": "pssm",
+      "pwm": [
+        {
+          "a": 0.05,
+          "g": 0.05,
+          "c": 0.8,
+          "t": 0.1
+        },
+        {
+          "a": 0.05,
+          "g": 0.05,
+          "c": 0.1,
+          "t": 0.8
+        },
+        {
+          "a": 0.05,
+          "g": 0.8,
+          "c": 0.05,
+          "t": 0.1
+        },
+        {
+          "a": 0.1,
+          "g": 0.1,
+          "c": 0.1,
+          "t": 0.7
+        }
+      ]
+    },
+    {
+      "objectType": "connector",
+      "mu": 31.0,
+      "sigma": 20
+    },
+    {
+      "objectType": "pssm",
+      "pwm": [
+        {
+          "a": 0.02,
+          "g": 0.94,
+          "c": 0.02,
+          "t": 0.02
+        },
+        {
+          "a": 0.06,
+          "g": 0.02,
+          "c": 0.02,
+          "t": 0.9
+        },
+        {
+          "a": 0.05,
+          "g": 0.05,
+          "c": 0.05,
+          "t": 0.85
+        },
+        {
+          "a": 0.05,
+          "g": 0.05,
+          "c": 0.85,
+          "t": 0.05
+        }
+      ]
+    }
+  ]
+]
