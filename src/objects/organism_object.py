@@ -5,7 +5,7 @@ It allocates the full data structure
 
 import random
 import numpy as np
-
+from scipy.stats import ks_2samp
 
 def gini_RSV(values_for_each_class):
     '''
@@ -702,7 +702,7 @@ class OrganismObject:
             if placed_org["energy"] < E_threshold_value:
                 placed_org["energy"] = E_threshold_value
         
-        # return score, blocks and blokcers and PSSMs scores in that sequence
+        # return score, blocks and blockers and PSSMs scores in that sequence
         return placed_org
     
     
@@ -741,6 +741,7 @@ class OrganismObject:
 			# append energy
             scores.append(energy)
         
+        score_stdev = np.std(scores)
         if self.cumulative_fit_method == "sum":
             # Compute fitness score as sum over the positive scores
             score = np.sum(scores)
@@ -759,8 +760,59 @@ class OrganismObject:
         else:
             avg_gini = np.prod(ginis) ** (1/len(ginis))  # geometric mean
         
-        return {"score": score, "avg_gini": avg_gini}
+        return {"score": score, "stdev" : score_stdev, "avg_gini": avg_gini}
 
+    def get_kolmogorov_fitness(self, pos_dataset: list, neg_dataset: list,
+                               traceback=False, print_out = False, 
+                               use_gini=False) -> float:
+        """Returns the organism's fitness, defined as the Kolmogorov-Smirnov
+           test statistic. This is bounded in [0,1].
+           Test null assumes the samples are drawn from the same (continuous)
+           distribution.
+           The statistic is sensitive to differences in both location and shape 
+           of the empirical cumulative distribution functions of the two samples.
+        Args:
+            pos_dataset: list of dna sequences in the positive dataset
+            neg_dataset: list of dna sequences in the negative dataset
+        Returns:
+            fitness assigned to the organism
+        """       
+        # Values on the positive set
+        pos_values = []
+        ginis = []
+        for s_dna in pos_dataset:
+            #do traceback only if Gini is requested
+            if use_gini:
+    			# get the energy and pssm scores
+                sfit = self.get_seq_fitness(s_dna, traceback=True)
+            else:      
+                sfit = self.get_seq_fitness(s_dna)
+            
+            pos_values.append(sfit["energy"])  # get sequence energy score
+            pssm_scores = sfit["recognizers_scores"]  # PSSMs scores
+            if use_gini:
+    			# compute and append the Gini coefficient
+                if len(pssm_scores) > 0:
+                    gini = gini_RSV(pssm_scores)  # Gini coefficient
+                    ginis.append(gini)
+        
+        # Compute the average Gini coefficient as the geometric mean
+        if len(ginis) == 0:  # Case where no Gini was requested
+            avg_gini = 0  # minimum penalty is arbitrarily assigned
+        else:
+            avg_gini = np.prod(ginis) ** (1/len(ginis))  # geometric mean
+        
+        # Values on the negative set
+        neg_values = []
+        for s_dna in neg_dataset:
+            sfit = self.get_seq_fitness(s_dna)
+            neg_values.append(sfit["energy"])  # get sequence energy score
+        
+        # Compute fitness score as a Boltzmannian probability
+        kolmogorov_fitness = ks_2samp(pos_values, neg_values).statistic
+        
+        return {"score": kolmogorov_fitness, "avg_gini": avg_gini}        
+        
     def get_boltz_fitness(self, pos_dataset: list, neg_dataset: list,
                           genome_length: int, traceback=False, 
                           print_out = False, use_gini=False) -> float:
