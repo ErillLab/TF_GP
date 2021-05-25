@@ -302,7 +302,7 @@ def main():
                     fitness2 =  p_2 - n_2
                     gini2 = positive_performance2["avg_gini"]
                 
-                elif FITNESS_FUNCTION == "welch's":
+                elif FITNESS_FUNCTION == "welchs":
                     # First organism
                     positive_performance1 = first_organism.get_additive_fitness(positive_dataset[:MAX_SEQUENCES_TO_FIT_POS],
                                                                         traceback=False, print_out = False, 
