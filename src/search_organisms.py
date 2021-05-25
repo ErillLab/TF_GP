@@ -302,6 +302,53 @@ def main():
                     fitness2 =  p_2 - n_2
                     gini2 = positive_performance2["avg_gini"]
                 
+                elif FITNESS_FUNCTION == "welch's":
+                    # First organism
+                    positive_performance1 = first_organism.get_additive_fitness(positive_dataset[:MAX_SEQUENCES_TO_FIT_POS],
+                                                                        traceback=False, print_out = False, 
+                                                                        use_gini=False)
+                    negative_performance1 = first_organism.get_additive_fitness(negative_dataset[:MAX_SEQUENCES_TO_FIT_NEG],
+                                                                        traceback=False, print_out = False, 
+                                                                        use_gini=False)
+                    p_1 = positive_performance1["score"]
+                    n_1 = negative_performance1["score"]
+                    
+                    # Standard deviations
+                    sigma_p_1 = positive_performance1["stdev"]
+                    sigma_n_1 = negative_performance1["stdev"]
+                    
+                    # Standard errors
+                    sterr_p_1 = sigma_p_1 / MAX_SEQUENCES_TO_FIT_POS**(1/2)
+                    sterr_n_1 = sigma_n_1 / MAX_SEQUENCES_TO_FIT_NEG**(1/2)
+                    
+                    # Welch's t score
+                    fitness1 =  (p_1 - n_1) / (sterr_p_1**2 + sterr_n_1**2)**(1/2)
+                    
+                    gini1 = positive_performance1["avg_gini"]
+                    
+                    # Second organism
+                    positive_performance2 = second_organism.get_additive_fitness(positive_dataset[:MAX_SEQUENCES_TO_FIT_POS],
+                                                                        traceback=False, print_out = False, 
+                                                                        use_gini=False)
+                    negative_performance2 = second_organism.get_additive_fitness(negative_dataset[:MAX_SEQUENCES_TO_FIT_NEG],
+                                                                        traceback=False, print_out = False, 
+                                                                        use_gini=False)
+                    p_2 = positive_performance2["score"]
+                    n_2 = negative_performance2["score"]
+                    
+                    # Standard deviations
+                    sigma_p_2 = positive_performance2["stdev"]
+                    sigma_n_2 = negative_performance2["stdev"]
+                    
+                    # Standard errors
+                    sterr_p_2 = sigma_p_2 / MAX_SEQUENCES_TO_FIT_POS**(1/2)
+                    sterr_n_2 = sigma_n_2 / MAX_SEQUENCES_TO_FIT_NEG**(1/2)
+                    
+                    # Welch's t score
+                    fitness2 =  (p_2 - n_2) / (sterr_p_2**2 + sterr_n_2**2)**(1/2)
+                    
+                    gini2 = positive_performance2["avg_gini"]
+                
                 else:
                     raise Exception("Not a valid fitness function name, "
                                     + "check the configuration file.")

@@ -707,7 +707,7 @@ class OrganismObject:
     
     
     def get_additive_fitness(self, a_dna: list, traceback=False, 
-                             print_out = False, use_gini=False) -> float:
+                             print_out = False, use_gini=False) -> dict:
         """Return the total Fitness for an array of DNA sequences and the
            chosen fitness method
 
@@ -761,6 +761,26 @@ class OrganismObject:
             avg_gini = np.prod(ginis) ** (1/len(ginis))  # geometric mean
         
         return {"score": score, "stdev" : score_stdev, "avg_gini": avg_gini}
+    
+    def get_binding_energies(self, a_dna: list, traceback=False, 
+                             print_out = False, use_gini=False) -> list:
+        """Return the binding energies for an array of DNA sequences.
+
+        Args:
+            a_dna: list of dna sequences
+
+        Returns:
+            list of binding eneregies
+        """
+
+        scores = []
+		# for each sequence in the provided sequence set
+        for s_dna in a_dna:
+            sfit = self.get_seq_fitness(s_dna)
+            energy = sfit["energy"]
+            scores.append(energy)
+        
+        return scores
 
     def get_kolmogorov_fitness(self, pos_dataset: list, neg_dataset: list,
                                traceback=False, print_out = False, 
