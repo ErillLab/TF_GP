@@ -6,7 +6,7 @@ from search_organisms import read_fasta_file, read_json_file, export_organism
 from objects.organism_factory import OrganismFactory
 import json
 import numpy as np
-
+import matplotlib.pyplot as plt
 import time
 
 CONFIG_FILE = "config.json"
@@ -71,13 +71,12 @@ def main():
                                              traceback=False, 
                                              print_out = False, use_gini=False)
         kolm_fitness = performance1["score"]
-                
         
-
         
         # print("Boltzmann --- %s seconds ---" % (time.time() - start_time))
         
         # start_time = time.time()
+        
         # Discriminative fitness
         Pf = org.get_additive_fitness(positive_dataset[:max_sequences_to_fit_pos],
                                      traceback=False, print_out = False, 
@@ -94,11 +93,33 @@ def main():
         discr_fitness =  P - N
         # print("Additive --- %s seconds ---" % (time.time() - start_time))
         
+        
+        # Welch's fitness
+        sterr_P = Pstd / max_sequences_to_fit_pos**(1/2)
+        sterr_N = Nstd / max_sequences_to_fit_neg**(1/2)
+        welchs_fitness =  (P - N) / (sterr_P**2 + sterr_N**2)**(1/2)
+        
+        
+        # Distribution plotting
+        Pe = org.get_binding_energies(positive_dataset[:max_sequences_to_fit_pos],
+                                     traceback=False, print_out = False, 
+                                     use_gini=False)
+        
+        Ne = org.get_binding_energies(negative_dataset[:max_sequences_to_fit_neg],
+                                     traceback=False, print_out = False, 
+                                     use_gini=False)
+        
+        plt.hist(Pe, alpha=0.5, label='positive set')
+        plt.hist(Ne, alpha=0.5, label='negative set')
+        plt.legend()
+        plt.savefig('org_' + str(org._id) + '_energy_distr')
+        plt.close()
+        
         # print out results (fitness, nodes, Gini, etc.) for organism
         print(
             (
                 "Org {} Nodes: {:.2f} GiniPSSMs: {:.2f} P: {:.2f}(+/-){:.2f} N: {:.2f}(+/-){:.2f}"
-                + " DiscrF: {:.2f} BoltzF: {:.2f} KolmF: {:.2f}\n"
+                + " DiscrF: {:.2f} BoltzF: {:.2f} KolmF: {:.2f} WelchsF: {:.2f}\n"
             ).format(
                 org._id,  # "Org"
                 nodes,  # "Nodes"
@@ -109,7 +130,8 @@ def main():
                 Nstd, # stdev for N
                 discr_fitness,  # "DiscrF"
                 boltz_fitness,  # "BoltzF"
-                kolm_fitness    # "KolmF"
+                kolm_fitness,    # "KolmF"
+                welchs_fitness  # "WelchF"
                 )
         )
         
