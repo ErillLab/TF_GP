@@ -80,17 +80,8 @@ class ConnectorObject():
         # precompute connector energies for expected length range
         self.stored_pdfs = []
         self.stored_cdfs = []
-        for dist in range(self.expected_seq_length):
-            self.stored_pdfs.append(norm_pdf(dist, self._mu, self._sigma))
-            if self._sigma != 0:
-                self.stored_cdfs.append(norm_cdf(dist, self._mu, self._sigma))
-            else:
-                if dist<self._mu:
-                    self.stored_cdfs.append(0.0)
-                else:
-                    self.stored_cdfs.append(1.0)
-                    
-
+        self.set_precomputed_pdfs_cdfs()
+    
     # pylint: enable=R0913
     # Setters
     def set_mu(self, _mu: int) -> None:
@@ -108,7 +99,26 @@ class ConnectorObject():
             sigma: Variance in distance between nodes connected by connector
         """
         self._sigma = sigma
-
+    
+    def set_precomputed_pdfs_cdfs(self) -> None:
+        """Set stored_pdfs variable and stored_cdfs variable
+        
+        """
+        
+        for dist in range(self.expected_seq_length):
+            
+            # Precompute PDF
+            self.stored_pdfs.append(norm_pdf(dist, self._mu, self._sigma))
+            
+            # Precompute CDF
+            if self._sigma != 0:
+                self.stored_cdfs.append(norm_cdf(dist, self._mu, self._sigma))
+            else:
+                if dist<self._mu:
+                    self.stored_cdfs.append(0.0)
+                else:
+                    self.stored_cdfs.append(1.0)
+    
     # pylint: disable=W0613
     def mutate(self, org_factory) -> None:
         """mutation for a connector
@@ -151,6 +161,9 @@ class ConnectorObject():
                 # Apply a shift in the range (-1, 1) to the log-mu
                 logb_mu += shift
                 self._mu = base**logb_mu
+        
+        # Recompute PDF and CDF values
+        self.set_precomputed_pdfs_cdfs()
 
     # pylint: enable=W0613
 
