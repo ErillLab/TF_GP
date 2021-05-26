@@ -147,12 +147,16 @@ def main():
     while not is_finished(END_WHILE_METHOD, iterations, max_score, 
                           last_max_score):
 
-        # Shuffle population & datasets
+        # Shuffle population
         # Organisms are shuffled for deterministic crowding selection
-        # Datasets are shuffled for subsampling
         random.shuffle(organism_population)
-        random.shuffle(negative_dataset)
-        random.shuffle(positive_dataset)
+        
+        # Shuffle datasets
+        # Datasets are shuffled for subsampling
+        if RANDOM_SHUFFLE_SAMPLING_POS:
+            random.shuffle(positive_dataset)
+        if RANDOM_SHUFFLE_SAMPLING_NEG:
+            random.shuffle(negative_dataset)
 
         # Reset max_score
         last_max_score = max_score
@@ -584,6 +588,8 @@ def set_up():
     global RESULT_PATH_PATH_DIR
     global MAX_SEQUENCES_TO_FIT_POS
     global MAX_SEQUENCES_TO_FIT_NEG
+    global RANDOM_SHUFFLE_SAMPLING_POS
+    global RANDOM_SHUFFLE_SAMPLING_NEG
     global FITNESS_FUNCTION
     global USE_GINI
     global GENOME_LENGTH
@@ -619,6 +625,8 @@ def set_up():
     NEGATIVE_FILENAME = config["main"]["NEGATIVE_FILENAME"]
     MAX_SEQUENCES_TO_FIT_POS = config["main"]["MAX_SEQUENCES_TO_FIT_POS"]
     MAX_SEQUENCES_TO_FIT_NEG = config["main"]["MAX_SEQUENCES_TO_FIT_NEG"]
+    RANDOM_SHUFFLE_SAMPLING_POS = config["main"]["RANDOM_SHUFFLE_SAMPLING_POS"]
+    RANDOM_SHUFFLE_SAMPLING_NEG = config["main"]["RANDOM_SHUFFLE_SAMPLING_NEG"]
     FITNESS_FUNCTION = config["main"]["FITNESS_FUNCTION"]
     USE_GINI = config["main"]["USE_GINI"]
     GENOME_LENGTH = config["main"]["GENOME_LENGTH"]
