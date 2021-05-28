@@ -321,6 +321,14 @@ def main():
                     sigma_p_1 = positive_performance1["stdev"]
                     sigma_n_1 = negative_performance1["stdev"]
                     
+                    # Lower bound to sigma
+                    # (Being more consistent than that on the sets will not help
+                    # your fitness)
+                    if sigma_p_1 < 1:
+                        sigma_p_1 = 1
+                    if sigma_n_1 < 1:
+                        sigma_n_1 = 1
+                    
                     # Standard errors
                     sterr_p_1 = sigma_p_1 / MAX_SEQUENCES_TO_FIT_POS**(1/2)
                     sterr_n_1 = sigma_n_1 / MAX_SEQUENCES_TO_FIT_NEG**(1/2)
@@ -343,6 +351,14 @@ def main():
                     # Standard deviations
                     sigma_p_2 = positive_performance2["stdev"]
                     sigma_n_2 = negative_performance2["stdev"]
+                    
+                    # Lower bound to sigma
+                    # (Being more consistent than that on the sets will not help
+                    # your fitness)
+                    if sigma_p_2 < 1:
+                        sigma_p_2 = 1
+                    if sigma_n_2 < 1:
+                        sigma_n_2 = 1
                     
                     # Standard errors
                     sterr_p_2 = sigma_p_2 / MAX_SEQUENCES_TO_FIT_POS**(1/2)
