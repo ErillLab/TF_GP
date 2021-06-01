@@ -1345,11 +1345,7 @@ class OrganismObject:
             a_dna: list fo sequences to export
 
         """
-
-        # Sort the array, so its always shown in the same order
-        # sorting is done by sequence, so first sequences start with "AAA.."
-        a_dna.sort()
-
+        
         ofile = open(filename, "w")
         # for every DNA sequence
         for s_dna in a_dna:
