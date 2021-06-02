@@ -318,8 +318,8 @@ class OrganismFactory:
         if random.random() < self.recombination_probability:
             parent1recogs = parent1.count_recognizers()
             parent2recogs = parent2.count_recognizers()
-
-           # if none of the organisms are single-recognizer organissm
+            
+            # if none of the organisms are single-recognizer organisms
             if parent1recogs != 1 and parent2recogs != 1:
                 # Select one connector in each parent for the split
                 index_1 = parent1.get_random_connector()
@@ -346,8 +346,7 @@ class OrganismFactory:
                        # Child 2 is (L2 + R1)
                         child2_reco = L2["recognizers"] + R1["recognizers"]
                         child2_conn = L2["connectors"] + R1["connectors"]
-        
-       
+                    
                     else:
                         # Second parent keeps the broken connector in the RIGHT chunk
                         L2, R2 = parent2.break_chain(index_2, "right")
@@ -398,8 +397,9 @@ class OrganismFactory:
                 # Set attribute that will map organism nodes to alignment matrix rows
                 child1.set_row_to_pssm()
                 child2.set_row_to_pssm()
-                                                
-            # if one of the two organisms is a single-recognizer organism
+            
+            # if at least one of the two organisms is a single-recognizer organism
+            # (if they both are, swapping them doesn't make any difference)
             else:
                 # Create the 2 children and assign new IDs
                 child1 = copy.deepcopy(parent1)
@@ -408,8 +408,12 @@ class OrganismFactory:
                 child1.set_id(self.get_id())
                 child2.set_id(self.get_id())
 
-                # determine single-pssm organism
+                # parent 1 is a single-recognizer organism
                 if parent1recogs == 1:
+                    ''' Then swap the only recognizer in child 1 (which is
+                    currently a copy of parent 1) with a random recognizer of
+                    child 2 (which is currently a copy of parent 2).
+                    '''
                     # get random RECOGNIZER index from other child
                     index_2 = child2.get_random_recognizer()
                     # get recognizer at that position
@@ -419,8 +423,12 @@ class OrganismFactory:
                     # child 1 takes the random child2 recognizer
                     child1.recognizers[0] = temp
                
-                # single-node org is child 2
+                # parent 2 is a single-recognizer organism
                 else:
+                    ''' Then swap the only recognizer in child 2 (which is
+                    currently a copy of parent 2) with a random recognizer of
+                    child 1 (which is currently a copy of parent 1).
+                    '''
                     # get random RECOGNIZER index from other child
                     index_1 = child1.get_random_recognizer()
                     # get recognizer at that position
@@ -432,8 +440,8 @@ class OrganismFactory:
                    
                 # Set attribute that will map organism nodes to alignment matrix rows
                 child1.set_row_to_pssm()
-                child2.set_row_to_pssm()                       
-
+                child2.set_row_to_pssm()
+        
         # no recombination case                  
         else:
             # Create the 2 children and assign new IDs
