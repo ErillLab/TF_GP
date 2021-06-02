@@ -158,8 +158,7 @@ def main():
 
     while not is_finished(END_WHILE_METHOD, iterations, max_score, 
                           last_max_score):
-    #for runs in range(3):
-
+        
         # Shuffle population
         # Organisms are shuffled for deterministic crowding selection
         random.shuffle(organism_population)
@@ -537,10 +536,16 @@ def main():
             RESULT_BASE_PATH_DIR + OUTPUT_FILENAME,
         )
         
-        
         # Print against a random positive sequence
         pos_seq_index = random.randint(0, len(positive_dataset)-1)
         max_organism[0].get_placement(positive_dataset[pos_seq_index], print_out = True)
+        
+        # Define positive set for exporting results
+        pos_set_for_export = copy.deepcopy(positive_dataset)
+        # Sort the dataset for export if we are shuffling the dataset, so that
+        # the DNA sequences will always appear in the same order
+        if RANDOM_SHUFFLE_SAMPLING_POS:
+            pos_set_for_export.sort()
         
         # Export organism if new best organism
         if changed_best_score:
@@ -548,7 +553,7 @@ def main():
                 time.strftime(timeformat), best_organism[0]._id
             )
             export_organism(
-                best_organism[0], positive_dataset, filename, organism_factory
+                best_organism[0], pos_set_for_export, filename, organism_factory
             )
         # Periodic organism export
         if iterations % PERIODIC_EXPORT == 0:
@@ -556,11 +561,9 @@ def main():
                 time.strftime(timeformat), max_organism[0]._id
             )
             export_organism(
-                max_organism[0], positive_dataset, filename, organism_factory
+                max_organism[0], pos_set_for_export, filename, organism_factory
             )
         
-
-        # print("-"*10)
         iterations += 1
         # END WHILE
 
@@ -618,6 +621,9 @@ def export_organism(
     results_file = "{}{}_results.txt".format(RESULT_BASE_PATH_DIR, filename)
 
     organism.export(organism_file)
+    
+    
+        
     organism.export_results(dataset, results_file)
     factory.export_organisms([organism], organism_file_json)
 
