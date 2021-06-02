@@ -6,6 +6,7 @@ It allocates the full data structure
 import random
 import numpy as np
 from scipy.stats import ks_2samp
+import copy
 
 def gini_RSV(values_for_each_class):
     '''
@@ -1293,7 +1294,10 @@ class OrganismObject:
         L_chunk = {"recognizers": L_recognizers, "connectors": L_connectors}
         R_chunk = {"recognizers": R_recognizers, "connectors": R_connectors}
         
-        return [L_chunk, R_chunk]
+        L_chunk_copy = copy.deepcopy(L_chunk)
+        R_chunk_copy = copy.deepcopy(R_chunk)
+        
+        return [L_chunk_copy, R_chunk_copy]
     
     def set_connectors(self, connectors_list):
         """Set the connectors of the organism to be those provided in the input
