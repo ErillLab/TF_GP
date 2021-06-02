@@ -105,6 +105,11 @@ class ConnectorObject():
         
         """
         
+        # Delete previous values
+        self.stored_pdfs = []
+        self.stored_cdfs = []
+        
+        # Compute new values
         for dist in range(self.expected_seq_length):
             
             # Precompute PDF
