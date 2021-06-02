@@ -136,8 +136,20 @@ def main():
     iterations = 0
     max_score = float("-inf")
     last_max_score = 0.0
-    best_organism = (None, 0.0, 0, 0.0)
-    max_organism = (None, 0.0, 0, 0.0)
+    # Organism with highest fitness in the simulation
+    best_organism = (
+        None,  # the organism object
+        0.0,  # its fitness
+        0,  # number of nodes it is made of
+        0.0  # the penalty it gets
+    )
+    # Organism with highest fitness in the iteration
+    max_organism = (
+        None,  # the organism object
+        0.0,  # its fitness
+        0,  # number of nodes it is made of
+        0.0  # the penalty it gets
+    )
     timeformat = "%Y-%m-%d--%H-%M-%S"
     print("Starting execution...")
 
@@ -146,6 +158,7 @@ def main():
 
     while not is_finished(END_WHILE_METHOD, iterations, max_score, 
                           last_max_score):
+    #for runs in range(3):
 
         # Shuffle population
         # Organisms are shuffled for deterministic crowding selection
@@ -163,7 +176,7 @@ def main():
         max_score = float("-inf")
         changed_best_score = False
         initial = time.time()
-
+        
         a_fitness = []
         a_nodes = []
 
@@ -210,15 +223,30 @@ def main():
             # else:
             #     pair_children.append((org1, child2))
             #     pair_children.append((org2, child1))
-
+            
             pair_children = []
+            ''' pair_children is a list of two elements. The two parents we are
+            now working with are elements i and i+1 in  organism_population.
+            We need to pair each of them with one of the two children obtained
+            with  get_children  method.
+            
+                - The first element in  pair_children  will be a tuple where
+                  the first element is organism i, and the second one is a
+                  child
+                  
+                - The second element in  pair_children  will be a tuple where
+                  the first element is organism i+1, and the second one is the
+                  other child
+            '''
+            
             # get lengths for all organisms (parents and children)
             lorg1 = org1.count_nodes()
             lorg2 = org2.count_nodes()
             lchld1 = child1.count_nodes()
             lchld2 = child2.count_nodes()
             
-            # make pairs based on size
+            # make pairs based on size (each parent is paired with the child
+            # that is more similar in terms of size)
             if lorg1 > lorg2:
                 if lchld1 > lchld2:
                     pair_children.append((org1, child1))
@@ -231,13 +259,20 @@ def main():
                     pair_children.append((org1, child2))
                     pair_children.append((org2, child1))
                 else:
+                    pair_children.append((org1, child1))
                     pair_children.append((org2, child2))
-                    pair_children.append((org1, child1))                    
-          
+            
             # Make two organisms compete
             # j index is used to re insert winning organism
             # into the population
             for j in range(len(pair_children)):
+                '''
+                when j is 0 we are dealing with organism i
+                when j is 1 we are dealing with organism i+1
+                
+                Therefore, the winner of the competition will replace element
+                i+j in  organism_population
+                '''
 
                 first_organism = pair_children[j][0]  # Parent Organism
                 second_organism = pair_children[j][1]  # Chid Organism
@@ -403,8 +438,8 @@ def main():
                 else:
                     effective_fitness_1 = fitness1
                     effective_fitness_2 = fitness2
-
-
+                
+                
                 if (
                         effective_fitness_1 > effective_fitness_2
                 ):  # The first organism wins
@@ -501,11 +536,12 @@ def main():
             ),
             RESULT_BASE_PATH_DIR + OUTPUT_FILENAME,
         )
-
+        
+        
         # Print against a random positive sequence
         pos_seq_index = random.randint(0, len(positive_dataset)-1)
         max_organism[0].get_placement(positive_dataset[pos_seq_index], print_out = True)
-
+        
         # Export organism if new best organism
         if changed_best_score:
             filename = "{}_{}".format(
@@ -522,6 +558,7 @@ def main():
             export_organism(
                 max_organism[0], positive_dataset, filename, organism_factory
             )
+        
 
         # print("-"*10)
         iterations += 1
