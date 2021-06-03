@@ -672,8 +672,13 @@ def set_up():
     global configPssm
 
     config = read_json_file(JSON_CONFIG_FILENAME)
+    
     # Store config variables for main function
+    
     POPULATION_LENGTH = config["main"]["POPULATION_LENGTH"]
+    if POPULATION_LENGTH % 2 == 1:
+        raise Exception("POPULATION_LENGTH must be an even number. It's " +
+                        "currently set to " + str(POPULATION_LENGTH))
     DATASET_BASE_PATH_DIR = config["main"]["DATASET_BASE_PATH_DIR"]
     RESULT_BASE_PATH_DIR = (
         config["main"]["RESULT_BASE_PATH_DIR"]
