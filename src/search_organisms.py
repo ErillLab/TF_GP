@@ -540,12 +540,11 @@ def main():
         pos_seq_index = random.randint(0, len(positive_dataset)-1)
         max_organism[0].get_placement(positive_dataset[pos_seq_index], print_out = True)
         
-        # Define positive set for exporting results
-        pos_set_for_export = copy.deepcopy(positive_dataset)
-        # Sort the dataset for export if we are shuffling the dataset, so that
-        # the DNA sequences will always appear in the same order
         if RANDOM_SHUFFLE_SAMPLING_POS:
-            pos_set_for_export.sort()
+            # Sort the positive dataset so that, when exporting with  export_organism
+            # function, the subset of DNA sequences used for printing will be
+            # always the same (and they'll apear always in the same order).
+            positive_dataset.sort()
         
         # Export organism if new best organism
         if changed_best_score:
@@ -553,7 +552,7 @@ def main():
                 time.strftime(timeformat), best_organism[0]._id
             )
             export_organism(
-                best_organism[0], pos_set_for_export, filename, organism_factory
+                best_organism[0], positive_dataset, filename, organism_factory
             )
         # Periodic organism export
         if iterations % PERIODIC_EXPORT == 0:
@@ -561,7 +560,7 @@ def main():
                 time.strftime(timeformat), max_organism[0]._id
             )
             export_organism(
-                max_organism[0], pos_set_for_export, filename, organism_factory
+                max_organism[0], positive_dataset, filename, organism_factory
             )
         
         iterations += 1
